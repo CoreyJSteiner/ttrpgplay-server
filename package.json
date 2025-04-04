@@ -5,7 +5,7 @@
   "main": "server.ts",
   "type": "module",
   "scripts": {
-    "dev": "node --experimental-strip-types server.ts",
+    "dev": "node --env-file .env --experimental-strip-types server.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
