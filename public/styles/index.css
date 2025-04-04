@@ -43,16 +43,16 @@ body {
     font-size: 1.25rem;
 }
 
-#messages {
+#chatmessages {
     list-style-type: none;
     margin: 0;
     padding: 0;
 }
 
-#messages li {
+#chatmessages li {
     padding: 0.5rem 1rem;
 }
 
-#messages>li:nth-child(odd) {
+#chatmessages>li:nth-child(odd) {
     background: #efefef;
 }
