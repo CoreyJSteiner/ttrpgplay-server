@@ -3,7 +3,9 @@ import http from 'http'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { Server } from 'socket.io'
-import cyrpto from 'crypto'
+import crypto from 'crypto'
+import { DiceRoll } from '@dice-roller/rpg-dice-roller';
+import { log } from 'console'
 
 const app = express()
 app.use(express.static("public"));
@@ -23,15 +25,29 @@ io.on('connection', (socket) => {
     console.log('a user connected')
     socket.userid = crypto.randomUUID()
     socket.on('chat message', (msg) => {
-        let messageLine = `${socket.username}: ${msg}`
+        let messageLine = `${socket.username}: ${parseMessage(msg)}`
         io.emit('chat message', messageLine)
         console.log(messageLine);
     })
     socket.on('username set', (username) => {
         socket.username = username
     })
-
 })
+
+function parseMessage(message) {
+    console.log(message.slice(0, 2))
+    if (message.slice(0, 3) === "/r ") {
+        try {
+            const roll = new DiceRoll(message.slice(3))
+            return roll
+        } catch (error) {
+            return 'Invalid roll'
+        }
+
+    }
+
+    return message
+}
 
 io.emit('some event', { someProperty: 'some value', otherProperty: 'other value' });
 
