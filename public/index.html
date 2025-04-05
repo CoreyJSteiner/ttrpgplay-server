@@ -18,6 +18,16 @@
         var form = document.getElementById('chatform');
         var input = document.getElementById('chatinput');
 
+        function getUsername() {
+            let username = prompt("What will be your username?")
+            if (username === null || username === "") {
+                getUsername();
+            } else {
+                socket.emit('username set', username)
+            }
+        }
+        getUsername()
+
         form.addEventListener('submit', function (e) {
             e.preventDefault();
             if (input.value) {
