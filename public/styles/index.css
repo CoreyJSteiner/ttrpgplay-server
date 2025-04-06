@@ -56,3 +56,16 @@ body {
 #chatmessages>li:nth-child(odd) {
     background: #efefef;
 }
+
+#charactersheet {
+    border: 0.1rem solid #000;
+    padding: .5rem;
+    border-collapse: collapse;
+}
+
+#charactersheet th,
+td {
+    border: 0.1rem solid #000;
+    text-align: center;
+    padding: .5rem;
+}

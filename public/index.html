@@ -8,7 +8,7 @@
 <body>
     <ul id="chatmessages"></ul>
     <form id="chatform" action="">
-        <input id="chatinput" autocomplete="off" /><button>Send</button>
+        <input id="chatinput" autocomplete="off" autofocus /><button>Send</button>
     </form>
     <script src="/socket.io/socket.io.js"></script>
     <script>
@@ -39,6 +39,35 @@
         socket.on('chat message', function (msg) {
             var item = document.createElement('li');
             item.textContent = msg;
+            messages.appendChild(item);
+            window.scrollTo(0, document.body.scrollHeight);
+        });
+
+        socket.on('character sheet display', function (data) {
+            var item = document.createElement('li');
+            item.innerHTML = `
+                <table id="charactersheet">
+                    <tr>
+                        <th>HP</th>
+                        <th>AC</th>
+                        <th>STR</th>
+                        <th>DEX</th>
+                        <th>CON</th>
+                        <th>INT</th>
+                        <th>WIS</th>
+                        <th>CHA</th>
+                    </tr>
+                    <tr>
+                        <td>${data.HP}</td>
+                        <td>${data.AC}</td>
+                        <td>${data.STR}</td>
+                        <td>${data.DEX}</td>
+                        <td>${data.CON}</td>
+                        <td>${data.INT}</td>
+                        <td>${data.WIS}</td>
+                        <td>${data.CHA}</td>
+                    </tr>
+                </table>`;
             messages.appendChild(item);
             window.scrollTo(0, document.body.scrollHeight);
         });

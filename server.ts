@@ -33,9 +33,7 @@ io.on('connection', (socket) => {
     })
 
     socket.on('chat message', (msg) => {
-        let messageLine: string = `${usernames[userID]}: ${parseMessage(msg)}`
-        io.emit('chat message', messageLine)
-        console.log(messageLine);
+        handleMessage(msg, userID)
     })
 })
 
@@ -43,19 +41,59 @@ function createUUID(): UUID {
     return crypto.randomUUID() as UUID
 }
 
-function parseMessage(message: string): DiceRoll | string {
-    console.log(message.slice(0, 2))
-    if (message.slice(0, 3) === "/r ") {
+type CharSheet = Record<string, number>
+
+const testCharSheet: CharSheet = {
+    HP: 666,
+    AC: 20,
+    STR: 10,
+    DEX: 9,
+    CON: 11,
+    INT: 13,
+    WIS: 13,
+    CHA: 15
+}
+
+function handleMessage(msg: string, userID): void {
+    if (msg.slice(0, 2) === "/c") {
+        io.emit('character sheet display', testCharSheet)
+        return
+    }
+
+    let messageLine: string = `${usernames[userID]}: ${parseMessage(msg)}`
+    io.emit('chat message', messageLine)
+    console.log(messageLine);
+}
+
+function parseMessage(msg: string): DiceRoll | string {
+    console.log(msg.slice(0, 2))
+    if (msg.slice(0, 3) === "/r ") {
         try {
-            const roll = new DiceRoll(message.slice(3))
+            const subMsg = subTokens(msg, testCharSheet)
+            const roll = new DiceRoll(subMsg.slice(3))
             return roll
         } catch (error) {
             return 'Invalid roll'
         }
-
     }
 
-    return message
+    return msg
+}
+
+function subTokens(input: string, charSheet: CharSheet): string {
+    // Regex to find all # followed by word characters (like #DEX)
+    const tokenRegex = /#(\w+)/g;
+
+    // Replace each match
+    const result = input.replace(tokenRegex, (match, charSheetKey) => {
+        const value = charSheet[charSheetKey];
+        if (value === undefined) {
+            throw new Error(`Invalid string: Stat '${charSheetKey}' not found in object`);
+        }
+        return value.toString();
+    });
+
+    return result;
 }
 
 server.listen(port, () => {
