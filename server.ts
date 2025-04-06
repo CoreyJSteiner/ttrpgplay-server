@@ -2,10 +2,9 @@ import express from 'express'
 import http from 'http'
 import path from 'path'
 import { fileURLToPath } from 'url'
-import { Server } from 'socket.io'
+import { Server, Socket } from 'socket.io'
 import crypto from 'crypto'
-import { DiceRoll } from '@dice-roller/rpg-dice-roller';
-import { log } from 'console'
+import { DiceRoll } from '@dice-roller/rpg-dice-roller'
 
 const app = express()
 app.use(express.static("public"));
@@ -15,7 +14,10 @@ const port = process.env.PORT || 'PORT NOT SET'
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const usernames = {}
+type UUID = string
+
+const userSockets: Record<UUID, Socket> = {}
+const usernames: Record<UUID, string> = {}
 
 app.get('/', (req, res) => {
     res.sendFile(__dirname + 'public/index.html')
@@ -23,18 +25,25 @@ app.get('/', (req, res) => {
 
 io.on('connection', (socket) => {
     console.log('a user connected')
-    socket.userid = crypto.randomUUID()
+    const userID: UUID = createUUID()
+    userSockets[userID] = socket
+
+    socket.on('username set', (username) => {
+        usernames[userID] = username
+    })
+
     socket.on('chat message', (msg) => {
-        let messageLine = `${socket.username}: ${parseMessage(msg)}`
+        let messageLine: string = `${usernames[userID]}: ${parseMessage(msg)}`
         io.emit('chat message', messageLine)
         console.log(messageLine);
     })
-    socket.on('username set', (username) => {
-        socket.username = username
-    })
 })
 
-function parseMessage(message) {
+function createUUID(): UUID {
+    return crypto.randomUUID() as UUID
+}
+
+function parseMessage(message: string): DiceRoll | string {
     console.log(message.slice(0, 2))
     if (message.slice(0, 3) === "/r ") {
         try {
@@ -48,8 +57,6 @@ function parseMessage(message) {
 
     return message
 }
-
-io.emit('some event', { someProperty: 'some value', otherProperty: 'other value' });
 
 server.listen(port, () => {
     console.log(`Server listening on PORT:${port}`)
