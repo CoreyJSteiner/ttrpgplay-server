@@ -24,9 +24,10 @@
     "target": "ES6",
     "module": "ESNext",
     "outDir": "./dist",
-    "esModuleInterop": true,
+    "rootDir": "./",
     "strict": true,
+    "esModuleInterop": true,
     "skipLibCheck": true,
-    "noImplictAny": true
+    "moduleResolution": "node"
   }
 }
