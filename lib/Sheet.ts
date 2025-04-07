@@ -22,7 +22,7 @@ export class Sheet {
 
         Object.keys(this.sheetValues).forEach(key => {
             const { name, gameValue } = this.sheetValues[key]
-            output[name] = gameValue.invoke()
+            output[name] = gameValue.invoke(true, false)
         });
 
         return output

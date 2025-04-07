@@ -21,18 +21,21 @@ class GameValue {
         this.effects = effects || []
     }
 
-    invoke(): number {
+    invoke(useEffects: boolean = true, promptEffects: boolean = false): number {
         let effectMod = 0
 
-        for (let i = 0; i < this.effects.length; i++) {
-            const effect = this.effects[i]
-            if (effect.prop === 'Temp') {
-                // await prompt owner(s) input
-                // if not in effect remove and continue to next iteration
-            }
+        if (useEffects) {
+            for (let i = 0; i < this.effects.length; i++) {
+                const effect = this.effects[i]
+                if (effect.prop === 'Temp' && !promptEffects) {
+                    // await prompt owner(s) input
+                    // if not in effect remove and continue to next iteration
+                }
 
-            effectMod += effect.value
+                effectMod += effect.value
+            }
         }
+
 
         return this.baseValue + effectMod
     }
