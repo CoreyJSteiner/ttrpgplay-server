@@ -26,7 +26,17 @@
                 socket.emit('username set', username)
             }
         }
+
+        function setRoom() {
+            let roomname = prompt("Which room would you like to join?")
+            if (roomname === null || roomname === "") {
+                setRoom();
+            } else {
+                socket.emit('room set', roomname)
+            }
+        }
         getUsername()
+        setRoom()
 
         form.addEventListener('submit', function (e) {
             e.preventDefault();

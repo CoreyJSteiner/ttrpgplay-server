@@ -20,6 +20,7 @@ type UUID = string
 
 const userSockets: Record<UUID, Socket> = {}
 const usernames: Record<UUID, string> = {}
+const userrooms: Record<UUID, string> = {}
 
 app.get('/', (req, res) => {
     res.sendFile(__dirname + 'public/index.html')
@@ -32,6 +33,12 @@ io.on('connection', (socket) => {
 
     socket.on('username set', (username) => {
         usernames[userID] = username
+    })
+
+    socket.on('room set', (room) => {
+        const roomname = room || "main"
+        userrooms[userID] = roomname
+        socket.join(roomname)
     })
 
     socket.on('chat message', (msg) => {
@@ -67,12 +74,12 @@ const testCharSheet1: object = {
 
 function handleMessage(msg: string, userID): void {
     if (msg.slice(0, 2) === "/c") {
-        io.emit('character sheet display', testCharSheet1)
+        io.to(userrooms[userID]).emit('character sheet display', testCharSheet1)
         return
     }
 
     let messageLine: string = `${usernames[userID]}: ${parseMessage(msg)}`
-    io.emit('chat message', messageLine)
+    io.to(userrooms[userID]).emit('chat message', messageLine)
     console.log(messageLine);
 }
 
