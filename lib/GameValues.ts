@@ -8,8 +8,6 @@ interface Effect {
 
 type Effects = Array<Effect>
 
-type Sheet = Record<string, GameValue>
-
 class GameValue {
     name: string
     baseValue: number
@@ -54,5 +52,5 @@ class GameValue {
         return false
     }
 }
-export type { Sheet }
+
 export { GameValue }

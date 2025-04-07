@@ -7,7 +7,6 @@ import crypto from 'crypto'
 import { DiceRoll } from '@dice-roller/rpg-dice-roller'
 import { GameValue } from './lib/GameValues.ts'
 import { Sheet } from './lib/Sheet.ts'
-// import type { Sheet } from './lib/GameValues.ts'
 
 const app = express()
 app.use(express.static("public"));
