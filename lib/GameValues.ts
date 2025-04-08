@@ -37,6 +37,10 @@ class GameValue {
         return this._effects
     }
 
+    get display(): string {
+        return `${this.invoke()}`
+    }
+
     invoke(useEffects: boolean = true, promptEffects: boolean = false): number {
         let effectMod = 0
 
@@ -90,6 +94,10 @@ class Scalar extends GameValue {
         return this._max
     }
 
+    get display(): string {
+        return `${this.invoke()} [ ${this._min} | ${this._max} ]`
+    }
+
     setValue(value: number, owner: string): number {
         if (value >= this._min && value <= this._max) {
             return super.setValue(value, owner)
@@ -124,8 +132,82 @@ class Scalar extends GameValue {
     }
 }
 
+type Operation =
+    '+' |
+    '-' |
+    '*' |
+    '/'
+
+class Calc extends GameValue {
+    private _valueA: GameValue
+    private _valueB: GameValue
+    private _operation: Operation
+
+    constructor(
+        baseValue: number,
+        name: string,
+        owner: string,
+        valueA: GameValue,
+        valueB: GameValue,
+        operation: Operation,
+        effects?: Effects) {
+        super(baseValue, name, owner, effects)
+        this._valueA = valueA
+        this._valueB = valueB
+        this._operation = operation
+    }
+
+    get valueA(): GameValue {
+        return this._valueA
+    }
+
+    get valueB(): GameValue {
+        return this._valueB
+    }
+
+    get operation(): Operation {
+        return this._operation
+    }
+
+    get display(): string {
+        return `${this.invoke()} [ ${this._valueA} ${this._operation} ${this._valueB}]`
+    }
+
+    invoke(useEffects: boolean = true, promptEffects: boolean = false): number {
+        const valueA = this._valueA.invoke()
+        const valueB = this._valueA.invoke()
+        let result = 0
+
+        switch (this._operation) {
+            case '+':
+                result = valueA + valueB
+                break;
+            case '-':
+                result = valueA - valueB
+                break;
+            case '*':
+                result = valueA * valueB
+                break;
+            case '/':
+                result = valueA / valueB
+                break;
+            default:
+                throw new Error(`Invalid Calc operation on ${this.display}`);
+                break;
+        }
+
+        return result
+    }
+}
+
+class Die extends GameValue {
+    constructor(baseValue: number, name: string, owner: string, effects?: Effects) {
+        super(baseValue, name, owner, effects)
+    }
+}
+
 // Example 5e
 
-const level = new Scalar(0, "Level", "ADMIN", 0, 20)
+// const level = new Scalar(0, "Level", "ADMIN", 0, 20)
 
 export { GameValue }
