@@ -167,16 +167,10 @@ class Calc extends GameValue {
     }
 
     invoke(useEffects: boolean = true, promptEffects: boolean = false): number {
-        // const invocations: Array<number> = this._values.map(gameValue => {
-        //     return gameValue.invoke()
-        // })
-
         const invocations: Record<string, number> = this._values.reduce((acc, gv) => {
             acc[gv.name] = gv.invoke()
             return acc
         }, {})
-
-        console.log(invocations)
 
         switch (this._operation) {
             case '+':
@@ -214,13 +208,16 @@ class Calc extends GameValue {
                 if (curLetter === ' ' || curLetter === ')') {
                     replacePos.push(i)
                 }
+                if (i + 1 === this._operation.length) {
+                    replacePos.push(this._operation.length)
+                }
             } else if (curLetter === '#') {
                 replacing = true
             } else {
                 evalStr += curLetter
             }
 
-            if (replacePos.length === 2 || i === this._operation.length) {
+            if (replacePos.length === 2) {
                 const key = this._operation.slice(replacePos[0], replacePos[1])
                 if (invocations[key]) {
                     evalStr += invocations[key] + curLetter
@@ -232,6 +229,7 @@ class Calc extends GameValue {
             }
         }
 
+        console.log('<-' + evalStr + '->')
         return new DiceRoll(evalStr).total
     }
 }
@@ -258,7 +256,7 @@ class Die extends GameValue {
     }
 
     get display(): string {
-        return `${this._quantity}d${this._sides}`
+        return `${this.name}: ${this.invoke()} <${this._quantity}d${this._sides}>`
     }
 
     invoke(useEffects: boolean = true, promptEffects: boolean = false): number {
@@ -274,9 +272,18 @@ const baseAC = new GameValue(10, 'BASE_AC', 'ADMIN')
 const dex = new Scalar(14, 'ABS_DEX', 'PLAYER', 1, 20)
 const dexMod = new Calc(0, 'AMOD_DEX', 'ADMIN', [dex], 'floor(#ABS_DEX - 10) / 2')
 const AC = new Calc(0, 'AC', 'ADMIN', [dexMod, baseAC], '#AMOD_DEX + #BASE_AC + 0')
-
-console.log(dexMod.values)
-console.log(dexMod.display)
 console.log(AC.display)
+const lance = new Die(0, 'LANCE', 'ADMIN', 12, 1)
+const lvl = new Scalar(1, 'LVL', 'ADMIN', 1, 20)
+const prof = new Calc(0, 'PROF', 'ADMIN', [lvl], '1 + ceil(#LVL / 4)')
+const d20Roll = new Die(0, 'D20', 'ADMIN', 20, 1)
+console.log('---start---')
+const atkRoll = new Calc(0, 'ATK', 'ADMIN', [dexMod, prof, d20Roll], '#AMOD_DEX + #PROF + #D20')
+console.log(atkRoll.display)
+// const damage = new Calc(0, 'DMG', 'ADMIN', [dexMod, lance], '#AMOD_DEX + #PROF')
 
-export { GameValue, Scalar, Calc, Die }
+
+
+// console.log(damage)
+
+// export { GameValue, Scalar, Calc, Die }
