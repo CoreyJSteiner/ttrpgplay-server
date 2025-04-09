@@ -1,5 +1,6 @@
-type EffectProperty = 'Temp' | 'Default'
+import { DiceRoll } from "@dice-roller/rpg-dice-roller"
 
+type EffectProperty = 'Temp' | 'Default'
 
 interface Effect {
     value: number,
@@ -60,12 +61,8 @@ class GameValue {
         return this._baseValue + effectMod
     }
 
-    setValue(value: number, owner: string): number {
-        if (this.isOwner(owner)) {
-            this._baseValue = value
-        } else {
-            throw new Error("Only owners may set value");
-        }
+    setValue(value: number): number {
+        this._baseValue = value
 
         return value
     }
@@ -98,15 +95,15 @@ class Scalar extends GameValue {
         return `${this.invoke()} [ ${this._min} | ${this._max} ]`
     }
 
-    setValue(value: number, owner: string): number {
+    setValue(value: number): number {
         if (value >= this._min && value <= this._max) {
-            return super.setValue(value, owner)
+            return super.setValue(value)
         } else {
             throw new Error(`Value '${value}' does not conform to Scalar threshold (${this.min} - ${this.max})`);
         }
     }
 
-    sum(value: number | Array<number>, owner: string, strict: boolean = false): number {
+    setSum(value: number | Array<number>, strict: boolean = false): number {
         let modValue = 0
 
         if (typeof value === 'number') {
@@ -123,7 +120,7 @@ class Scalar extends GameValue {
             }
         }
 
-        return this.setValue(modValue + this.baseValue, owner)
+        return this.setValue(modValue + this.baseValue)
     }
 
     setThreshold(min: number | null, max: number | null): void {
@@ -174,35 +171,57 @@ class Calc extends GameValue {
     }
 
     invoke(useEffects: boolean = true, promptEffects: boolean = false): number {
-        const valueA = this._valueA.invoke()
-        const valueB = this._valueA.invoke()
-        let result = 0
+        const valueA = this._valueA.invoke(useEffects, promptEffects)
+        const valueB = this._valueA.invoke(useEffects, promptEffects)
 
         switch (this._operation) {
             case '+':
-                result = valueA + valueB
+                this.setValue(valueA + valueB)
                 break;
             case '-':
-                result = valueA - valueB
+                this.setValue(valueA - valueB)
                 break;
             case '*':
-                result = valueA * valueB
+                this.setValue(valueA * valueB)
                 break;
             case '/':
-                result = valueA / valueB
+                this.setValue(valueA / valueB)
                 break;
             default:
                 throw new Error(`Invalid Calc operation on ${this.display}`);
                 break;
         }
 
-        return result
+        return super.invoke(useEffects, promptEffects)
     }
 }
 
 class Die extends GameValue {
-    constructor(baseValue: number, name: string, owner: string, effects?: Effects) {
+    private _sides: number
+    private _quantity: number
+
+    constructor(baseValue: number, name: string, owner: string, sides: number, quantity: number, effects?: Effects) {
         super(baseValue, name, owner, effects)
+        this._sides = sides
+        this._quantity = quantity
+    }
+
+    get sides(): number {
+        return this._sides
+    }
+
+    get quantity(): number {
+        return this._quantity
+    }
+
+    get display(): string {
+        return `${this._quantity}d${this._sides}`
+    }
+
+    invoke(useEffects: boolean = true, promptEffects: boolean = false): number {
+        const roll = new DiceRoll(`${this._quantity}d${this._sides}`).total
+        this.setValue(roll)
+        return super.invoke(useEffects, promptEffects)
     }
 }
 
@@ -210,4 +229,4 @@ class Die extends GameValue {
 
 // const level = new Scalar(0, "Level", "ADMIN", 0, 20)
 
-export { GameValue }
+export { GameValue, Scalar, Calc, Die }
