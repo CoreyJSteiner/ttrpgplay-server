@@ -39,7 +39,7 @@ class GameValue {
     }
 
     get display(): string {
-        return `${this.invoke()}`
+        return `${this.name}: ${this.invoke()}`
     }
 
     invoke(useEffects: boolean = true, promptEffects: boolean = false): number {
@@ -92,7 +92,7 @@ class Scalar extends GameValue {
     }
 
     get display(): string {
-        return `${this.invoke()} [ ${this._min} | ${this._max} ]`
+        return `${this.name}: ${this.invoke()} < ${this._min} | ${this._max} >`
     }
 
     setValue(value: number): number {
@@ -129,37 +129,33 @@ class Scalar extends GameValue {
     }
 }
 
-type Operation =
-    '+' |
-    '-' |
-    '*' |
-    '/'
+type Operation = string
 
 class Calc extends GameValue {
-    private _valueA: GameValue
-    private _valueB: GameValue
+    private _values: Array<GameValue>
     private _operation: Operation
 
     constructor(
         baseValue: number,
         name: string,
         owner: string,
-        valueA: GameValue,
-        valueB: GameValue,
+        values: Array<GameValue>,
         operation: Operation,
         effects?: Effects) {
         super(baseValue, name, owner, effects)
-        this._valueA = valueA
-        this._valueB = valueB
+        this._values = values
         this._operation = operation
+
+        //Initialize baseValue
+        this.setValue(this.invoke(false, false))
     }
 
-    get valueA(): GameValue {
-        return this._valueA
+    get values(): Array<GameValue> {
+        return this._values
     }
 
-    get valueB(): GameValue {
-        return this._valueB
+    get valuesStr(): Array<string> {
+        return this._values.map(val => val.display)
     }
 
     get operation(): Operation {
@@ -167,32 +163,76 @@ class Calc extends GameValue {
     }
 
     get display(): string {
-        return `${this.invoke()} [ ${this._valueA} ${this._operation} ${this._valueB}]`
+        return `${this.name}: ${this.invoke()} = \{${this._operation}\} [${this.valuesStr.join(', ')}]`
     }
 
     invoke(useEffects: boolean = true, promptEffects: boolean = false): number {
-        const valueA = this._valueA.invoke(useEffects, promptEffects)
-        const valueB = this._valueA.invoke(useEffects, promptEffects)
+        // const invocations: Array<number> = this._values.map(gameValue => {
+        //     return gameValue.invoke()
+        // })
+
+        const invocations: Record<string, number> = this._values.reduce((acc, gv) => {
+            acc[gv.name] = gv.invoke()
+            return acc
+        }, {})
+
+        console.log(invocations)
 
         switch (this._operation) {
             case '+':
-                this.setValue(valueA + valueB)
+                this.setValue(Object.values(invocations).reduce((acc, cur) => acc + cur))
                 break;
             case '-':
-                this.setValue(valueA - valueB)
+                this.setValue(Object.values(invocations).reduce((acc, cur) => acc - cur))
                 break;
             case '*':
-                this.setValue(valueA * valueB)
+                this.setValue(Object.values(invocations).reduce((acc, cur) => acc * cur))
                 break;
             case '/':
-                this.setValue(valueA / valueB)
+                this.setValue(Object.values(invocations).reduce((acc, cur) => acc / cur))
                 break;
             default:
-                throw new Error(`Invalid Calc operation on ${this.display}`);
+                this.setValue(this.strEval(invocations))
                 break;
         }
 
         return super.invoke(useEffects, promptEffects)
+    }
+
+    private strEval(invocations: Record<string, number>): number {
+        const usedNames: Set<string> = new Set<string>()
+        let evalStr: string = ''
+
+        let replacePos: Array<number> = []
+        let replacing: boolean = false
+        for (let i = 0; i < this._operation.length; i++) {
+            const curLetter = this._operation[i];
+            if (replacing) {
+                if (replacePos.length === 0) {
+                    replacePos.push(i)
+                }
+                if (curLetter === ' ' || curLetter === ')') {
+                    replacePos.push(i)
+                }
+            } else if (curLetter === '#') {
+                replacing = true
+            } else {
+                evalStr += curLetter
+            }
+
+            if (replacePos.length === 2 || i === this._operation.length) {
+                const key = this._operation.slice(replacePos[0], replacePos[1])
+                if (invocations[key]) {
+                    evalStr += invocations[key] + curLetter
+                    replacePos = []
+                    replacing = false
+                } else {
+                    throw new Error(`Could not find invocation '${key}'`)
+                }
+            }
+        }
+
+        return new DiceRoll(evalStr).total
     }
 }
 
@@ -204,6 +244,9 @@ class Die extends GameValue {
         super(baseValue, name, owner, effects)
         this._sides = sides
         this._quantity = quantity
+
+        //Initialize baseValue
+        this.setValue(this.invoke(false, false))
     }
 
     get sides(): number {
@@ -227,6 +270,13 @@ class Die extends GameValue {
 
 // Example 5e
 
-// const level = new Scalar(0, "Level", "ADMIN", 0, 20)
+const baseAC = new GameValue(10, 'BASE_AC', 'ADMIN')
+const dex = new Scalar(14, 'ABS_DEX', 'PLAYER', 1, 20)
+const dexMod = new Calc(0, 'AMOD_DEX', 'ADMIN', [dex], 'floor(#ABS_DEX - 10) / 2')
+const AC = new Calc(0, 'AC', 'ADMIN', [dexMod, baseAC], '#AMOD_DEX + #BASE_AC + 0')
+
+console.log(dexMod.values)
+console.log(dexMod.display)
+console.log(AC.display)
 
 export { GameValue, Scalar, Calc, Die }
