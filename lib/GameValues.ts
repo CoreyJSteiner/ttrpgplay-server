@@ -1,7 +1,5 @@
 import { DiceRoll } from "@dice-roller/rpg-dice-roller"
 
-const LOG_EVAL = false
-
 type EffectProperty = 'Temp' | 'Default'
 
 interface Effect {
@@ -197,14 +195,14 @@ class Calc extends GameValue {
                 this.setValue(Object.values(invocations).reduce((acc, cur) => acc / cur))
                 break;
             default:
-                this.setValue(this.strEval(invocations, LOG_EVAL))
+                this.setValue(this.strEval(invocations))
                 break;
         }
 
         return super.invoke(invokeOptions)
     }
 
-    private strEval(invocations: Record<string, number>, log?: boolean): number {
+    private strEval(invocations: Record<string, number>): number {
         const usedNames: Set<string> = new Set<string>()
         let evalStr: string = ''
 
@@ -239,10 +237,6 @@ class Calc extends GameValue {
                     throw new Error(`Could not find invocation '${key}'`)
                 }
             }
-        }
-
-        if (log) {
-            console.log('<-' + evalStr + '->')
         }
 
         return new DiceRoll(evalStr).total
