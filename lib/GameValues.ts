@@ -64,7 +64,7 @@ class GameValue {
     }
 
     get displaySimple(): string {
-        return `${this._baseValue}${this.effects.length > 0 ? '*' : ''}: `
+        return `${this._baseValue}${this.effects.length > 0 ? '*' : ''}`
     }
 
     invoke(invokeOptions: InvokeOptions = InvokeDefault): number {

@@ -54,7 +54,8 @@ function createUUID(): UUID {
 
 function handleMessage(msg: string, userID): void {
     if (msg.slice(0, 2) === "/c") {
-        io.to(userRooms[userID]).emit('character sheet display', manager.outputSheet())
+        const sheet: object = manager.outputSheet()
+        io.to(userRooms[userID]).emit('character sheet display', sheet)
         return
     }
 
