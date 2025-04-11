@@ -262,7 +262,7 @@ class Die extends GameValue {
     }
 
     get display(): string {
-        return `${this.name}: ${this.invoke()} <${this._quantity}d${this._sides}>`
+        return `${this.name}: ${this.baseValue} <${this._quantity}d${this._sides}>`
     }
 
     invoke(useEffects: boolean = true, promptEffects: boolean = false): number {
@@ -290,6 +290,10 @@ const atkRoll = new Calc(0, 'ATK', 'ADMIN', [dexMod, prof, d20Roll], '#AMOD_DEX 
 console.log(atkRoll.display)
 
 const damage = new Calc(0, 'DMG', 'ADMIN', [dexMod, lance], '#AMOD_DEX + #LANCE')
+console.log(damage.display)
+console.log(damage.display)
+dex.setValue(16)
+console.log(damage.invoke())
 console.log(damage.display)
 
 export { GameValue, Scalar, Calc, Die }
