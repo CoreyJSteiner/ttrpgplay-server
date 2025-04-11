@@ -52,9 +52,9 @@ function createUUID(): UUID {
     return crypto.randomUUID() as UUID
 }
 
-function handleMessage(msg: string, userID): void {
+function handleMessage(msg: string, userID: string): void {
     if (msg.slice(0, 2) === "/c") {
-        const sheet: object = manager.outputSheet()
+        const sheet: object = manager.outputSheet(userNames[userID])
         io.to(userRooms[userID]).emit('character sheet display', sheet)
         return
     }

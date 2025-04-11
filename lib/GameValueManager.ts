@@ -1,9 +1,8 @@
 import { GameValue, Scalar, Calc, Die } from "./GameValues.ts"
-import { Sheet } from "./Sheet.ts"
 import crypto from "crypto"
 type UUID = crypto.UUID
 
-const DEF_OWNER: string = '0'
+const DEF_OWNER: string = 'public'
 type GameValueEntry = {
     owner: string,
     gameValue: GameValue
@@ -85,10 +84,24 @@ class GameValueManager {
         return true
     }
 
-    outputSheet(): object {
+    outputSheet(owner?: string): object {
+        console.log(owner)
         const sheet: object = {}
+        const owners: Array<string> = [DEF_OWNER]
+        const ids: Array<UUID> = []
+        if (owner) {
+            owners.push(owner)
+        }
+        owners.forEach(o => {
+            const ownedIds: ValuesOwned = this._valueOwners[o]
+            if (ownedIds && ownedIds.size > 0) {
+                ownedIds.forEach(id => {
+                    ids.push(id)
+                })
+            }
+        })
 
-        Object.keys(this._idLookup).forEach(id => {
+        ids.forEach(id => {
             const gv: GameValue = this._idLookup[id].gameValue
             sheet[gv.name] = gv.displaySimple
         })
