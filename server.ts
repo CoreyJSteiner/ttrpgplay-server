@@ -16,8 +16,8 @@ const port = process.env.PORT || 'PORT NOT SET'
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const gvm: GameValueManager = new GameValueManager()
-gvm.importJSON(importTemplate)
+const manager: GameValueManager = new GameValueManager()
+manager.importJSON(importTemplate)
 
 type UUID = string
 
@@ -72,8 +72,8 @@ function parseMessage(msg: string): DiceRoll | string {
     console.log(msg.slice(0, 2))
     if (msg.slice(0, 3) === "/r ") {
         try {
-            const subMsg: string = subTokens(msg, testCharSheet1)
-            const roll: DiceRoll = new DiceRoll(subMsg.slice(3))
+            const notation: string = notationString(msg, manager)
+            const roll: DiceRoll = new DiceRoll(notation)
             const result: string = roll.output.slice(roll.notation.length)
 
             return msg.slice(3) + result
@@ -85,20 +85,21 @@ function parseMessage(msg: string): DiceRoll | string {
     return msg
 }
 
-function subTokens(input: string, charSheet: object): string {
+function notationString(input: string, gvm: GameValueManager, display?: boolean): string {
     // Regex to find all # followed by word characters (like #DEX)
-    const tokenRegex = /#(\w+)/g;
+    const tokenRegex = /#(\w+)/g
 
     // Replace each match
     const result = input.replace(tokenRegex, (match, gvName) => {
         const gv = gvm.getGameValueEntryByName(gvName).gameValue;
         if (gv === undefined) {
-            throw new Error(`Invalid string: Stat '${gvName}' not found in game value manager`);
+            throw new Error(`Invalid string: Stat '${gvName}' not found in game value manager`)
         }
-        return gv.invoke().toString();
+
+        return gv.invoke().toString()
     });
 
-    return result;
+    return result.slice(3)
 }
 
 server.listen(port, () => {
