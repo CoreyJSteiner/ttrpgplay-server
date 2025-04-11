@@ -1,5 +1,7 @@
 import { DiceRoll } from "@dice-roller/rpg-dice-roller"
 
+const LOG_EVAL = false
+
 type EffectProperty = 'Temp' | 'Default'
 
 interface Effect {
@@ -39,7 +41,7 @@ class GameValue {
     }
 
     get display(): string {
-        return `${this.name}: ${this.invoke()}`
+        return `${this.name}: ${this._baseValue}`
     }
 
     invoke(useEffects: boolean = true, promptEffects: boolean = false): number {
@@ -92,7 +94,7 @@ class Scalar extends GameValue {
     }
 
     get display(): string {
-        return `${this.name}: ${this.invoke()} < ${this._min} | ${this._max} >`
+        return `${this.name}: ${this.baseValue} < ${this._min} | ${this._max} >`
     }
 
     setValue(value: number): number {
@@ -163,7 +165,7 @@ class Calc extends GameValue {
     }
 
     get display(): string {
-        return `${this.name}: ${this.invoke()} = \{${this._operation}\} [${this.valuesStr.join(', ')}]`
+        return `${this.name}: ${this.baseValue} = \{${this._operation}\} [${this.valuesStr.join(', ')}]`
     }
 
     invoke(useEffects: boolean = true, promptEffects: boolean = false): number {
@@ -186,14 +188,14 @@ class Calc extends GameValue {
                 this.setValue(Object.values(invocations).reduce((acc, cur) => acc / cur))
                 break;
             default:
-                this.setValue(this.strEval(invocations))
+                this.setValue(this.strEval(invocations, LOG_EVAL))
                 break;
         }
 
         return super.invoke(useEffects, promptEffects)
     }
 
-    private strEval(invocations: Record<string, number>): number {
+    private strEval(invocations: Record<string, number>, log?: boolean): number {
         const usedNames: Set<string> = new Set<string>()
         let evalStr: string = ''
 
@@ -220,7 +222,8 @@ class Calc extends GameValue {
             if (replacePos.length === 2) {
                 const key = this._operation.slice(replacePos[0], replacePos[1])
                 if (invocations[key]) {
-                    evalStr += invocations[key] + curLetter
+                    evalStr += invocations[key]
+                    if (curLetter === ' ' || curLetter === ')') evalStr += curLetter
                     replacePos = []
                     replacing = false
                 } else {
@@ -229,7 +232,10 @@ class Calc extends GameValue {
             }
         }
 
-        console.log('<-' + evalStr + '->')
+        if (log) {
+            console.log('<-' + evalStr + '->')
+        }
+
         return new DiceRoll(evalStr).total
     }
 }
@@ -271,19 +277,19 @@ class Die extends GameValue {
 const baseAC = new GameValue(10, 'BASE_AC', 'ADMIN')
 const dex = new Scalar(14, 'ABS_DEX', 'PLAYER', 1, 20)
 const dexMod = new Calc(0, 'AMOD_DEX', 'ADMIN', [dex], 'floor(#ABS_DEX - 10) / 2')
+
 const AC = new Calc(0, 'AC', 'ADMIN', [dexMod, baseAC], '#AMOD_DEX + #BASE_AC + 0')
 console.log(AC.display)
+
 const lance = new Die(0, 'LANCE', 'ADMIN', 12, 1)
 const lvl = new Scalar(1, 'LVL', 'ADMIN', 1, 20)
 const prof = new Calc(0, 'PROF', 'ADMIN', [lvl], '1 + ceil(#LVL / 4)')
 const d20Roll = new Die(0, 'D20', 'ADMIN', 20, 1)
-console.log('---start---')
+
 const atkRoll = new Calc(0, 'ATK', 'ADMIN', [dexMod, prof, d20Roll], '#AMOD_DEX + #PROF + #D20')
 console.log(atkRoll.display)
-// const damage = new Calc(0, 'DMG', 'ADMIN', [dexMod, lance], '#AMOD_DEX + #PROF')
 
+const damage = new Calc(0, 'DMG', 'ADMIN', [dexMod, lance], '#AMOD_DEX + #LANCE')
+console.log(damage.display)
 
-
-// console.log(damage)
-
-// export { GameValue, Scalar, Calc, Die }
+export { GameValue, Scalar, Calc, Die }
