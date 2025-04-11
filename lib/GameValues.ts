@@ -11,6 +11,24 @@ interface Effect {
 
 type Effects = Array<Effect>
 
+type InvokeOptions = {
+    useEffects?: boolean,
+    promptEffects?: boolean,
+    log?: boolean
+}
+
+const InvokeDefault: InvokeOptions = {
+    useEffects: true,
+    promptEffects: false,
+    log: false
+}
+
+const InitInvokeDefault: InvokeOptions = {
+    useEffects: false,
+    promptEffects: false,
+    log: false
+}
+
 class GameValue {
     private _name: string
     private _baseValue: number
@@ -38,7 +56,8 @@ class GameValue {
         return `${this.name}: ${this._baseValue}`
     }
 
-    invoke(useEffects: boolean = true, promptEffects: boolean = false, log?: boolean): number {
+    invoke(invokeOptions: InvokeOptions = InvokeDefault): number {
+        const { useEffects, promptEffects, log } = invokeOptions
         let effectMod = 0
 
         if (useEffects) {
@@ -138,7 +157,7 @@ class Calc extends GameValue {
         this._operation = operation
 
         //Initialize baseValue
-        this.setValue(this.invoke(false, false))
+        this.setValue(this.invoke(InitInvokeDefault))
     }
 
     get values(): Array<GameValue> {
@@ -157,7 +176,8 @@ class Calc extends GameValue {
         return `${this.name}: ${this.baseValue} = \{${this._operation}\} [${this.valuesStr.join(', ')}]`
     }
 
-    invoke(useEffects: boolean = true, promptEffects: boolean = false, log?: boolean): number {
+    invoke(invokeOptions: InvokeOptions = InvokeDefault): number {
+        const { useEffects, promptEffects, log } = invokeOptions
         const invocations: Record<string, number> = this._values.reduce((acc, gv) => {
             acc[gv.name] = gv.invoke()
             return acc
@@ -181,7 +201,7 @@ class Calc extends GameValue {
                 break;
         }
 
-        return super.invoke(useEffects, promptEffects, log)
+        return super.invoke(invokeOptions)
     }
 
     private strEval(invocations: Record<string, number>, log?: boolean): number {
@@ -239,7 +259,7 @@ class Die extends GameValue {
         this._quantity = quantity
 
         //Initialize baseValue
-        this.setValue(this.invoke(false, false))
+        this.setValue(this.invoke(InitInvokeDefault))
     }
 
     get sides(): number {
@@ -254,10 +274,11 @@ class Die extends GameValue {
         return `${this.name}: ${this.baseValue} <${this._quantity}d${this._sides}>`
     }
 
-    invoke(useEffects: boolean = true, promptEffects: boolean = false, log?: boolean): number {
+    invoke(invokeOptions: InvokeOptions = InvokeDefault): number {
+        const { useEffects, promptEffects, log } = invokeOptions
         const roll = new DiceRoll(`${this._quantity}d${this._sides}`).total
         this.setValue(roll)
-        return super.invoke(useEffects, promptEffects, log)
+        return super.invoke(invokeOptions)
     }
 }
 
@@ -282,6 +303,6 @@ const damage = new Calc(0, 'DMG', [dexMod, lance], '#AMOD_DEX + #LANCE')
 // console.log(damage.display)
 // console.log(damage.display)
 dex.setValue(16)
-console.log(damage.invoke(false, false, true))
+console.log(damage.invoke({ log: true }))
 
 export { GameValue, Scalar, Calc, Die }
