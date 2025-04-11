@@ -14,12 +14,10 @@ type Effects = Array<Effect>
 class GameValue {
     private _name: string
     private _baseValue: number
-    private _owner: string
     private _effects: Effects
 
-    constructor(baseValue: number, name: string, owner: string, effects?: Effects) {
+    constructor(baseValue: number, name: string, effects?: Effects) {
         this._name = name || ""
-        this._owner = owner || ""
         this._baseValue = baseValue
         this._effects = effects || []
     }
@@ -32,10 +30,6 @@ class GameValue {
         return this._baseValue
     }
 
-    get owner(): string {
-        return this._owner
-    }
-
     get effects(): Effects {
         return this._effects
     }
@@ -44,7 +38,7 @@ class GameValue {
         return `${this.name}: ${this._baseValue}`
     }
 
-    invoke(useEffects: boolean = true, promptEffects: boolean = false): number {
+    invoke(useEffects: boolean = true, promptEffects: boolean = false, log?: boolean): number {
         let effectMod = 0
 
         if (useEffects) {
@@ -59,6 +53,7 @@ class GameValue {
             }
         }
 
+        if (log) console.log(this.display)
 
         return this._baseValue + effectMod
     }
@@ -68,19 +63,14 @@ class GameValue {
 
         return value
     }
-
-    isOwner(owner: string): boolean {
-        if (owner === this._owner) return true
-        return false
-    }
 }
 
 class Scalar extends GameValue {
     private _min: number
     private _max: number
 
-    constructor(baseValue: number, name: string, owner: string, min: number, max: number, effects?: Effects) {
-        super(baseValue, name, owner, effects)
+    constructor(baseValue: number, name: string, min: number, max: number, effects?: Effects) {
+        super(baseValue, name, effects)
         this._min = min
         this._max = max
     }
@@ -140,11 +130,10 @@ class Calc extends GameValue {
     constructor(
         baseValue: number,
         name: string,
-        owner: string,
         values: Array<GameValue>,
         operation: Operation,
         effects?: Effects) {
-        super(baseValue, name, owner, effects)
+        super(baseValue, name, effects)
         this._values = values
         this._operation = operation
 
@@ -168,7 +157,7 @@ class Calc extends GameValue {
         return `${this.name}: ${this.baseValue} = \{${this._operation}\} [${this.valuesStr.join(', ')}]`
     }
 
-    invoke(useEffects: boolean = true, promptEffects: boolean = false): number {
+    invoke(useEffects: boolean = true, promptEffects: boolean = false, log?: boolean): number {
         const invocations: Record<string, number> = this._values.reduce((acc, gv) => {
             acc[gv.name] = gv.invoke()
             return acc
@@ -192,7 +181,7 @@ class Calc extends GameValue {
                 break;
         }
 
-        return super.invoke(useEffects, promptEffects)
+        return super.invoke(useEffects, promptEffects, log)
     }
 
     private strEval(invocations: Record<string, number>, log?: boolean): number {
@@ -244,8 +233,8 @@ class Die extends GameValue {
     private _sides: number
     private _quantity: number
 
-    constructor(baseValue: number, name: string, owner: string, sides: number, quantity: number, effects?: Effects) {
-        super(baseValue, name, owner, effects)
+    constructor(baseValue: number, name: string, sides: number, quantity: number, effects?: Effects) {
+        super(baseValue, name, effects)
         this._sides = sides
         this._quantity = quantity
 
@@ -265,35 +254,34 @@ class Die extends GameValue {
         return `${this.name}: ${this.baseValue} <${this._quantity}d${this._sides}>`
     }
 
-    invoke(useEffects: boolean = true, promptEffects: boolean = false): number {
+    invoke(useEffects: boolean = true, promptEffects: boolean = false, log?: boolean): number {
         const roll = new DiceRoll(`${this._quantity}d${this._sides}`).total
         this.setValue(roll)
-        return super.invoke(useEffects, promptEffects)
+        return super.invoke(useEffects, promptEffects, log)
     }
 }
 
 // Example 5e
 
-const baseAC = new GameValue(10, 'BASE_AC', 'ADMIN')
-const dex = new Scalar(14, 'ABS_DEX', 'PLAYER', 1, 20)
-const dexMod = new Calc(0, 'AMOD_DEX', 'ADMIN', [dex], 'floor(#ABS_DEX - 10) / 2')
+const baseAC = new GameValue(10, 'BASE_AC',)
+const dex = new Scalar(14, 'ABS_DEX', 1, 20)
+const dexMod = new Calc(0, 'AMOD_DEX', [dex], 'floor(#ABS_DEX - 10) / 2')
 
-const AC = new Calc(0, 'AC', 'ADMIN', [dexMod, baseAC], '#AMOD_DEX + #BASE_AC + 0')
-console.log(AC.display)
+const AC = new Calc(0, 'AC', [dexMod, baseAC], '#AMOD_DEX + #BASE_AC + 0')
+// console.log(AC.display)
 
-const lance = new Die(0, 'LANCE', 'ADMIN', 12, 1)
-const lvl = new Scalar(1, 'LVL', 'ADMIN', 1, 20)
-const prof = new Calc(0, 'PROF', 'ADMIN', [lvl], '1 + ceil(#LVL / 4)')
-const d20Roll = new Die(0, 'D20', 'ADMIN', 20, 1)
+const lance = new Die(0, 'LANCE', 12, 1)
+const lvl = new Scalar(1, 'LVL', 1, 20)
+const prof = new Calc(0, 'PROF', [lvl], '1 + ceil(#LVL / 4)')
+const d20Roll = new Die(0, 'D20', 20, 1)
 
-const atkRoll = new Calc(0, 'ATK', 'ADMIN', [dexMod, prof, d20Roll], '#AMOD_DEX + #PROF + #D20')
-console.log(atkRoll.display)
+const atkRoll = new Calc(0, 'ATK', [dexMod, prof, d20Roll], '#AMOD_DEX + #PROF + #D20')
+// console.log(atkRoll.display)
 
-const damage = new Calc(0, 'DMG', 'ADMIN', [dexMod, lance], '#AMOD_DEX + #LANCE')
-console.log(damage.display)
-console.log(damage.display)
+const damage = new Calc(0, 'DMG', [dexMod, lance], '#AMOD_DEX + #LANCE')
+// console.log(damage.display)
+// console.log(damage.display)
 dex.setValue(16)
-console.log(damage.invoke())
-console.log(damage.display)
+console.log(damage.invoke(false, false, true))
 
 export { GameValue, Scalar, Calc, Die }
