@@ -9,8 +9,9 @@ type SheetValueMap = Record<string, SheetValue>
 
 class Sheet {
     sheetValues: SheetValueMap
-    constructor() {
-        this.sheetValues = {}
+
+    constructor(sheetValues: SheetValueMap = {}) {
+        this.sheetValues = sheetValues
     }
 
     getVal(calcName: string): SheetValue {

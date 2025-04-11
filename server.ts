@@ -6,7 +6,6 @@ import { Server, Socket } from 'socket.io'
 import crypto from 'crypto'
 import { DiceRoll } from '@dice-roller/rpg-dice-roller'
 import { GameValueManager, importTemplate } from './lib/GameValueManager.ts'
-import { Sheet } from './lib/Sheet.ts'
 
 const app = express()
 app.use(express.static("public"));
@@ -53,13 +52,9 @@ function createUUID(): UUID {
     return crypto.randomUUID() as UUID
 }
 
-const testCharSheet: Sheet = new Sheet()
-testCharSheet.configTest()
-const testCharSheet1: object = testCharSheet.getSheetOutput()
-
 function handleMessage(msg: string, userID): void {
     if (msg.slice(0, 2) === "/c") {
-        io.to(userRooms[userID]).emit('character sheet display', testCharSheet1)
+        io.to(userRooms[userID]).emit('character sheet display', manager.outputSheet())
         return
     }
 

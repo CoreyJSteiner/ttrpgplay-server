@@ -1,4 +1,5 @@
 import { GameValue, Scalar, Calc, Die } from "./GameValues.ts"
+import { Sheet } from "./Sheet.ts"
 import crypto from "crypto"
 type UUID = crypto.UUID
 
@@ -82,6 +83,16 @@ class GameValueManager {
         delete this._idLookup[id]
 
         return true
+    }
+
+    outputSheet(): object {
+        const sheet: object = {}
+
+        Object.keys(this._idLookup).forEach(id => {
+            const gv: GameValue = this._idLookup[id].gameValue
+            sheet[gv.name] = gv.displaySimple
+        })
+        return sheet
     }
 
     invokeById(id: UUID): number {
