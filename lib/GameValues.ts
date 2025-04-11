@@ -1,4 +1,5 @@
 import { DiceRoll } from "@dice-roller/rpg-dice-roller"
+import { UUID } from "crypto"
 
 type EffectProperty = 'Temp' | 'Default'
 
@@ -31,11 +32,13 @@ class GameValue {
     private _name: string
     private _baseValue: number
     private _effects: Effects
+    private _id: UUID
 
     constructor(baseValue: number, name: string, effects?: Effects) {
         this._name = name || ""
         this._baseValue = baseValue
         this._effects = effects || []
+        this._id = crypto.randomUUID()
     }
 
     get name(): string {
@@ -48,6 +51,10 @@ class GameValue {
 
     get effects(): Effects {
         return this._effects
+    }
+
+    get id(): UUID {
+        return this._id
     }
 
     get display(): string {
