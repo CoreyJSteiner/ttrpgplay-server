@@ -1,5 +1,6 @@
-import { UUID } from "crypto"
-import { GameValue, Scalar, Calc, Die } from "./GameValues"
+import { GameValue, Scalar, Calc, Die } from "./GameValues.ts"
+import crypto from "crypto"
+type UUID = crypto.UUID
 
 const DEF_OWNER: string = '0'
 type GameValueEntry = {
@@ -191,8 +192,6 @@ class GameValueManager {
     }
 }
 
-export { GameValueManager }
-
 //Example JSON
 
 const importTemplate: string = JSON.stringify({
@@ -225,7 +224,17 @@ const importTemplate: string = JSON.stringify({
                 'DexMod',
                 'D20'
             ],
-            'operation': '#BaseAC + #DexMod + #D20'
+            'operation': '#BaseAC + #DexMod'
+        },
+        {
+            'baseVal': 1,
+            'owner': 'P1',
+            'name': 'ATK',
+            'values': [
+                'DexMod',
+                'D20'
+            ],
+            'operation': '#D20 + #DexMod'
         }
     ],
     'die': [
@@ -237,6 +246,8 @@ const importTemplate: string = JSON.stringify({
         }
     ]
 })
+
+export { GameValueManager, importTemplate }
 
 //Test
 

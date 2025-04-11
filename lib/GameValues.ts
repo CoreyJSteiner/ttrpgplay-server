@@ -1,5 +1,7 @@
 import { DiceRoll } from "@dice-roller/rpg-dice-roller"
-import { UUID } from "crypto"
+import crypto from "crypto"
+const randomUUID = crypto.randomUUID
+type UUID = crypto.UUID
 
 type EffectProperty = 'Temp' | 'Default'
 
@@ -38,7 +40,7 @@ class GameValue {
         this._name = name || ""
         this._baseValue = baseValue
         this._effects = effects || []
-        this._id = crypto.randomUUID()
+        this._id = randomUUID()
     }
 
     get name(): string {
@@ -59,6 +61,10 @@ class GameValue {
 
     get display(): string {
         return `${this.name}: ${this._baseValue}`
+    }
+
+    get displaySimple(): string {
+        return `${this._baseValue}${this.effects.length > 0 ? '*' : ''}: `
     }
 
     invoke(invokeOptions: InvokeOptions = InvokeDefault): number {
@@ -285,25 +291,25 @@ class Die extends GameValue {
 
 // Example 5e
 
-const baseAC = new GameValue(10, 'BASE_AC',)
-const dex = new Scalar(14, 'ABS_DEX', 1, 20)
-const dexMod = new Calc(0, 'AMOD_DEX', [dex], 'floor(#ABS_DEX - 10) / 2')
+// const baseAC = new GameValue(10, 'BASE_AC',)
+// const dex = new Scalar(14, 'ABS_DEX', 1, 20)
+// const dexMod = new Calc(0, 'AMOD_DEX', [dex], 'floor(#ABS_DEX - 10) / 2')
 
-const AC = new Calc(0, 'AC', [dexMod, baseAC], '#AMOD_DEX + #BASE_AC + 0')
-// console.log(AC.display)
+// const AC = new Calc(0, 'AC', [dexMod, baseAC], '#AMOD_DEX + #BASE_AC + 0')
+// // console.log(AC.display)
 
-const lance = new Die(0, 'LANCE', 12, 1)
-const lvl = new Scalar(1, 'LVL', 1, 20)
-const prof = new Calc(0, 'PROF', [lvl], '1 + ceil(#LVL / 4)')
-const d20Roll = new Die(0, 'D20', 20, 1)
+// const lance = new Die(0, 'LANCE', 12, 1)
+// const lvl = new Scalar(1, 'LVL', 1, 20)
+// const prof = new Calc(0, 'PROF', [lvl], '1 + ceil(#LVL / 4)')
+// const d20Roll = new Die(0, 'D20', 20, 1)
 
-const atkRoll = new Calc(0, 'ATK', [dexMod, prof, d20Roll], '#AMOD_DEX + #PROF + #D20')
-// console.log(atkRoll.display)
+// const atkRoll = new Calc(0, 'ATK', [dexMod, prof, d20Roll], '#AMOD_DEX + #PROF + #D20')
+// // console.log(atkRoll.display)
 
-const damage = new Calc(0, 'DMG', [dexMod, lance], '#AMOD_DEX + #LANCE')
-// console.log(damage.display)
-// console.log(damage.display)
-dex.setValue(16)
-console.log(damage.invoke({ log: true }))
+// const damage = new Calc(0, 'DMG', [dexMod, lance], '#AMOD_DEX + #LANCE')
+// // console.log(damage.display)
+// // console.log(damage.display)
+// dex.setValue(16)
+// console.log(damage.invoke({ log: true }))
 
 export { GameValue, Scalar, Calc, Die }
