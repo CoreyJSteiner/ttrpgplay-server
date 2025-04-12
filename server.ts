@@ -59,16 +59,16 @@ function handleMessage(msg: string, userID: string): void {
         return
     }
 
-    let messageLine: string = `${userNames[userID]}: ${parseMessage(msg)}`
+    let messageLine: string = `${userNames[userID]}: ${parseMessage(msg, userID)}`
     io.to(userRooms[userID]).emit('chat message', messageLine)
     console.log(messageLine);
 }
 
-function parseMessage(msg: string): DiceRoll | string {
+function parseMessage(msg: string, userID: string): DiceRoll | string {
     console.log(msg.slice(0, 2))
     if (msg.slice(0, 3) === "/r ") {
         try {
-            const notation: string = notationString(msg, manager)
+            const notation: string = notationString(msg, manager, userID)
             const roll: DiceRoll = new DiceRoll(notation)
             const result: string = roll.output.slice(roll.notation.length)
 
@@ -81,13 +81,13 @@ function parseMessage(msg: string): DiceRoll | string {
     return msg
 }
 
-function notationString(input: string, gvm: GameValueManager, display?: boolean): string {
+function notationString(input: string, gvm: GameValueManager, userID: string, display?: boolean): string {
     // Regex to find all # followed by word characters (like #DEX)
     const tokenRegex = /#(\w+)/g
 
     // Replace each match
     const result = input.replace(tokenRegex, (match, gvName) => {
-        const gv = gvm.getGameValueEntryByName(gvName).gameValue;
+        const gv = gvm.getGameValueEntryByName(gvName, userNames[userID]).gameValue;
         if (gv === undefined) {
             throw new Error(`Invalid string: Stat '${gvName}' not found in game value manager`)
         }

@@ -7,40 +7,46 @@ type EffectProperty = 'Temp' | 'Default'
 
 interface Effect {
     value: number,
-    prop: EffectProperty
+    property: EffectProperty,
+    targetTags?: Tags
+    negateBase?: boolean
 }
 
 type Effects = Array<Effect>
 
 type InvokeOptions = {
     useEffects?: boolean,
-    promptEffects?: boolean,
+    effects?: Effects
     log?: boolean
 }
 
 const InvokeDefault: InvokeOptions = {
     useEffects: true,
-    promptEffects: false,
     log: false
 }
 
 const InitInvokeDefault: InvokeOptions = {
     useEffects: false,
-    promptEffects: false,
     log: false
 }
+
+type Tags = Set<string>
 
 class GameValue {
     private _name: string
     private _baseValue: number
-    private _effects: Effects
+    // private _effects: Effects
+    private _effectiveValue: number
     private _id: UUID
+    private _tags: Set<string>
 
-    constructor(baseValue: number, name: string, effects?: Effects) {
-        this._name = name || ""
+    constructor(baseValue: number, name: string, effects?: Effects, tags?: Tags) {
+        this._name = name
         this._baseValue = baseValue
-        this._effects = effects || []
+        // this._effects = effects || []
+        this._effectiveValue = this._baseValue
         this._id = randomUUID()
+        this._tags = tags || new Set()
     }
 
     get name(): string {
@@ -51,9 +57,9 @@ class GameValue {
         return this._baseValue
     }
 
-    get effects(): Effects {
-        return this._effects
-    }
+    // get effects(): Effects {
+    //     return this._effects
+    // }
 
     get id(): UUID {
         return this._id
@@ -64,34 +70,47 @@ class GameValue {
     }
 
     get displaySimple(): string {
-        return `${this._baseValue}${this.effects.length > 0 ? '*' : ''}`
+        return `${this._baseValue}${this._effectiveValue !== this._baseValue ? '*' : ''}`
+    }
+
+    get tags(): Tags {
+        return this._tags
     }
 
     invoke(invokeOptions: InvokeOptions = InvokeDefault): number {
-        const { useEffects, promptEffects, log } = invokeOptions
+        const { useEffects, log, effects } = invokeOptions
         let effectMod = 0
+        let baseOverride = false
 
-        if (useEffects) {
-            for (let i = 0; i < this._effects.length; i++) {
-                const effect = this._effects[i]
-                if (effect.prop === 'Temp' && !promptEffects) {
-                    // await prompt owner(s) input
-                    // if not in effect remove and continue to next iteration
+        if (useEffects && effects) {
+            effects.forEach(effect => {
+                effectMod += this.valueEffect(effect)
+                if (effect.negateBase) {
+                    baseOverride = true
                 }
-
-                effectMod += effect.value
-            }
+            })
         }
 
-        if (log) console.log(this.display)
+        let invocationValue = this._baseValue + effectMod
+        if (baseOverride) invocationValue -= this._baseValue
 
-        return this._baseValue + effectMod
+        if (log) console.log(this.display)
+        return invocationValue
     }
 
     setValue(value: number): number {
         this._baseValue = value
 
         return value
+    }
+
+    hasTag(tag: string): boolean {
+        return this._tags.has(tag)
+    }
+
+    valueEffect(effect: Effect): number {
+        let valueEffect = effect.value
+        return valueEffect
     }
 }
 
@@ -188,7 +207,7 @@ class Calc extends GameValue {
     }
 
     invoke(invokeOptions: InvokeOptions = InvokeDefault): number {
-        const { useEffects, promptEffects, log } = invokeOptions
+        const { useEffects, log } = invokeOptions
         const invocations: Record<string, number> = this._values.reduce((acc, gv) => {
             acc[gv.name] = gv.invoke()
             return acc
@@ -282,7 +301,7 @@ class Die extends GameValue {
     }
 
     invoke(invokeOptions: InvokeOptions = InvokeDefault): number {
-        const { useEffects, promptEffects, log } = invokeOptions
+        const { useEffects, log } = invokeOptions
         const roll = new DiceRoll(`${this._quantity}d${this._sides}`).total
         this.setValue(roll)
         return super.invoke(invokeOptions)
