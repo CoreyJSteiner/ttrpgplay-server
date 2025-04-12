@@ -3,15 +3,18 @@ import crypto from "crypto"
 const randomUUID = crypto.randomUUID
 type UUID = crypto.UUID
 
-type EffectProperty = 'Temp' | 'Default'
+const SELF_EFFECT: string = 'SELF'
 
-interface Effect {
-    value: number,
-    property: EffectProperty,
+type Operation = string
+type Invocations = Record<string, number>
+type Tags = Set<string>
+
+type Effect = {
+    values: Invocations,
+    operation: Operation,
     targetTags?: Tags
     negateBase?: boolean
 }
-
 type Effects = Array<Effect>
 
 type InvokeOptions = {
@@ -29,8 +32,6 @@ const InitInvokeDefault: InvokeOptions = {
     useEffects: false,
     log: false
 }
-
-type Tags = Set<string>
 
 class GameValue {
     private _name: string
@@ -79,23 +80,29 @@ class GameValue {
 
     invoke(invokeOptions: InvokeOptions = InvokeDefault): number {
         const { useEffects, log, effects } = invokeOptions
+        let invocationValue = this._baseValue
         let effectMod = 0
         let baseOverride = false
 
         if (useEffects && effects) {
             effects.forEach(effect => {
-                effectMod += this.valueEffect(effect)
+                const tags: Tags | undefined = effect.targetTags
+                if (tags && this.hasTag(tags)) {
+                    effectMod += this.valueEffect(effect)
+                }
                 if (effect.negateBase) {
                     baseOverride = true
                 }
             })
+
+            invocationValue += effectMod
+            if (baseOverride) invocationValue -= this._baseValue
         }
 
-        let invocationValue = this._baseValue + effectMod
-        if (baseOverride) invocationValue -= this._baseValue
-
         if (log) console.log(this.display)
-        return invocationValue
+
+        this._effectiveValue = invocationValue
+        return this._effectiveValue
     }
 
     setValue(value: number): number {
@@ -104,12 +111,29 @@ class GameValue {
         return value
     }
 
-    hasTag(tag: string): boolean {
-        return this._tags.has(tag)
+    hasTag(tag: string | Tags | undefined): boolean {
+        if (tag === undefined) return false
+        let hasTag = false
+        let inputType = tag.constructor.name
+
+        if (inputType === 'string') {
+            this._tags.has(tag as string)
+        } else if (inputType === 'Set') {
+            this._tags.forEach(gvTag => {
+                const inputTags = tag as Tags
+
+                if (inputTags.has(gvTag)) hasTag = true
+            })
+        }
+
+        return hasTag
     }
 
     valueEffect(effect: Effect): number {
-        let valueEffect = effect.value
+        const { values, operation } = effect
+        values[SELF_EFFECT] = this.invoke({ useEffects: false })
+
+        let valueEffect = performOperation(values, operation)
         return valueEffect
     }
 }
@@ -118,8 +142,8 @@ class Scalar extends GameValue {
     private _min: number
     private _max: number
 
-    constructor(baseValue: number, name: string, min: number, max: number, effects?: Effects) {
-        super(baseValue, name, effects)
+    constructor(baseValue: number, name: string, min: number, max: number, effects?: Effects, tags?: Tags) {
+        super(baseValue, name, effects, tags)
         this._min = min
         this._max = max
     }
@@ -170,8 +194,6 @@ class Scalar extends GameValue {
     }
 }
 
-type Operation = string
-
 class Calc extends GameValue {
     private _values: Array<GameValue>
     private _operation: Operation
@@ -181,8 +203,9 @@ class Calc extends GameValue {
         name: string,
         values: Array<GameValue>,
         operation: Operation,
-        effects?: Effects) {
-        super(baseValue, name, effects)
+        effects?: Effects,
+        tags?: Tags) {
+        super(baseValue, name, effects, tags)
         this._values = values
         this._operation = operation
 
@@ -207,9 +230,8 @@ class Calc extends GameValue {
     }
 
     invoke(invokeOptions: InvokeOptions = InvokeDefault): number {
-        const { useEffects, log } = invokeOptions
-        const invocations: Record<string, number> = this._values.reduce((acc, gv) => {
-            acc[gv.name] = gv.invoke()
+        const invocations: Invocations = this._values.reduce((acc, gv) => {
+            acc[gv.name] = gv.invoke(invokeOptions)
             return acc
         }, {})
 
@@ -227,51 +249,15 @@ class Calc extends GameValue {
                 this.setValue(Object.values(invocations).reduce((acc, cur) => acc / cur))
                 break;
             default:
-                this.setValue(this.strEval(invocations))
+                this.setValue(this.callOperation(invocations))
                 break;
         }
 
         return super.invoke(invokeOptions)
     }
 
-    private strEval(invocations: Record<string, number>): number {
-        const usedNames: Set<string> = new Set<string>()
-        let evalStr: string = ''
-
-        let replacePos: Array<number> = []
-        let replacing: boolean = false
-        for (let i = 0; i < this._operation.length; i++) {
-            const curLetter = this._operation[i];
-            if (replacing) {
-                if (replacePos.length === 0) {
-                    replacePos.push(i)
-                }
-                if (curLetter === ' ' || curLetter === ')') {
-                    replacePos.push(i)
-                }
-                if (i + 1 === this._operation.length) {
-                    replacePos.push(this._operation.length)
-                }
-            } else if (curLetter === '#') {
-                replacing = true
-            } else {
-                evalStr += curLetter
-            }
-
-            if (replacePos.length === 2) {
-                const key = this._operation.slice(replacePos[0], replacePos[1])
-                if (invocations[key]) {
-                    evalStr += invocations[key]
-                    if (curLetter === ' ' || curLetter === ')') evalStr += curLetter
-                    replacePos = []
-                    replacing = false
-                } else {
-                    throw new Error(`Could not find invocation '${key}'`)
-                }
-            }
-        }
-
-        return new DiceRoll(evalStr).total
+    private callOperation(invocations: Invocations): number {
+        return performOperation(invocations, this._operation)
     }
 }
 
@@ -279,8 +265,8 @@ class Die extends GameValue {
     private _sides: number
     private _quantity: number
 
-    constructor(baseValue: number, name: string, sides: number, quantity: number, effects?: Effects) {
-        super(baseValue, name, effects)
+    constructor(baseValue: number, name: string, sides: number, quantity: number, effects?: Effects, tags?: Tags) {
+        super(baseValue, name, effects, tags)
         this._sides = sides
         this._quantity = quantity
 
@@ -304,11 +290,55 @@ class Die extends GameValue {
         const { useEffects, log } = invokeOptions
         const roll = new DiceRoll(`${this._quantity}d${this._sides}`).total
         this.setValue(roll)
+
+        console.log(`rolled!${roll}`)
         return super.invoke(invokeOptions)
     }
 }
 
+function performOperation(invocations: Invocations, operation: Operation): number {
+    const usedNames: Set<string> = new Set<string>()
+    let evalStr: string = ''
+
+    let replacePos: Array<number> = []
+    let replacing: boolean = false
+    for (let i = 0; i < operation.length; i++) {
+        const curLetter = operation[i];
+        if (replacing) {
+            if (replacePos.length === 0) {
+                replacePos.push(i)
+            }
+            if (curLetter === ' ' || curLetter === ')') {
+                replacePos.push(i)
+            }
+            if (i + 1 === operation.length) {
+                replacePos.push(operation.length)
+            }
+        } else if (curLetter === '#') {
+            replacing = true
+        } else {
+            evalStr += curLetter
+        }
+
+        if (replacePos.length === 2) {
+            const key = operation.slice(replacePos[0], replacePos[1])
+            if (invocations[key]) {
+                evalStr += invocations[key]
+                if (curLetter === ' ' || curLetter === ')') evalStr += curLetter
+                replacePos = []
+                replacing = false
+            } else {
+                throw new Error(`Could not find invocation '${key}'`)
+            }
+        }
+    }
+
+    return new DiceRoll(evalStr).total
+}
+
 // Example 5e
+
+// const TAG_CRIT = 'critable'
 
 // const baseAC = new GameValue(10, 'BASE_AC',)
 // const dex = new Scalar(14, 'ABS_DEX', 1, 20)
@@ -317,7 +347,7 @@ class Die extends GameValue {
 // const AC = new Calc(0, 'AC', [dexMod, baseAC], '#AMOD_DEX + #BASE_AC + 0')
 // // console.log(AC.display)
 
-// const lance = new Die(0, 'LANCE', 12, 1)
+// const lance = new Die(0, 'LANCE', 12, 1, [], new Set([TAG_CRIT]))
 // const lvl = new Scalar(1, 'LVL', 1, 20)
 // const prof = new Calc(0, 'PROF', [lvl], '1 + ceil(#LVL / 4)')
 // const d20Roll = new Die(0, 'D20', 20, 1)
@@ -325,10 +355,17 @@ class Die extends GameValue {
 // const atkRoll = new Calc(0, 'ATK', [dexMod, prof, d20Roll], '#AMOD_DEX + #PROF + #D20')
 // // console.log(atkRoll.display)
 
+// const crit: Effect = {
+//     values: {},
+//     operation: `#${SELF_EFFECT}`,
+//     targetTags: new Set([TAG_CRIT]),
+//     negateBase: false
+// }
+
 // const damage = new Calc(0, 'DMG', [dexMod, lance], '#AMOD_DEX + #LANCE')
 // // console.log(damage.display)
 // // console.log(damage.display)
-// dex.setValue(16)
-// console.log(damage.invoke({ log: true }))
+// // dex.setValue(16)
+// console.log(damage.invoke({ log: true, useEffects: true, effects: [crit] }))
 
 export { GameValue, Scalar, Calc, Die }
