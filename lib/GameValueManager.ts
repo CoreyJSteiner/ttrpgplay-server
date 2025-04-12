@@ -10,7 +10,8 @@ type GameValueEntry = {
 type IDDictionary = Record<UUID, GameValueEntry>
 type ValuesOwned = Set<UUID>
 type ValueOwners = Record<string, ValuesOwned>
-type NameDictionary = Record<string, UUID>
+type NameOwnersEntry = Record<string, UUID>
+type NameDictionary = Record<string, NameOwnersEntry>
 
 type GVImportStatic = {
     'baseVal': number,
@@ -59,14 +60,21 @@ class GameValueManager {
     }
 
     add(gameValue: GameValue, owner?: string): boolean {
-        const gvOwner = owner || DEF_OWNER
+        const gvOwner: string = owner || DEF_OWNER
 
         this._idLookup[gameValue.id] = {
             owner: gvOwner,
             gameValue: gameValue
         }
 
-        this._nameLookup[gameValue.name] = gameValue.id
+        if (!this._nameLookup[gameValue.name]) {
+            this._nameLookup[gameValue.name] = {}
+        }
+
+        if (this._nameLookup[gameValue.name][gvOwner]) {
+            console.warn(`The name ${gameValue.name} is already taken for owner ${gvOwner}`)
+        }
+        this._nameLookup[gameValue.name][gvOwner] = gameValue.id
 
         if (!this._valueOwners[gvOwner]) this.createOwner(gvOwner)
         this._valueOwners[gvOwner].add(gameValue.id)
@@ -74,11 +82,12 @@ class GameValueManager {
         return true
     }
 
-    remove(id: UUID): boolean {
+    remove(id: UUID, owner?: string): boolean {
+        const gvOwner = owner || DEF_OWNER
         const gvEntry = this._idLookup[id]
 
         this._valueOwners[gvEntry.owner].delete(id)
-        delete this._nameLookup[gvEntry.gameValue.name]
+        delete this._nameLookup[gvEntry.gameValue.name][gvOwner]
         delete this._idLookup[id]
 
         return true
@@ -109,7 +118,7 @@ class GameValueManager {
     }
 
     invokeById(id: UUID): number {
-        const gvEntry = this.getGameValueEntryById(id)
+        const gvEntry: GameValueEntry = this.getGameValueEntryById(id)
         if (!gvEntry) console.warn(`No Game Value found with id: ${id}`)
         return gvEntry.gameValue.invoke()
     }
@@ -118,14 +127,17 @@ class GameValueManager {
         return this._idLookup[id]
     }
 
-    getIdByName(name: string): UUID {
-        const id = this._nameLookup[name]
-        if (!id) console.warn(`No Game Value found with name: ${name}`)
-        return this._nameLookup[name]
+    getIdByName(name: string, owner: string = DEF_OWNER): UUID {
+        const nameEntry: NameOwnersEntry = this._nameLookup[name]
+        const id = nameEntry[owner] ? nameEntry[owner] : nameEntry[DEF_OWNER]
+        if (!id) console.warn(`No Game Value found with name: ${name} for ${owner}`)
+        return id
     }
 
-    getGameValueEntryByName(name: string): GameValueEntry {
-        const id: UUID = this.getIdByName(name)
+    getGameValueEntryByName(name: string, owner?: string): GameValueEntry {
+        const gvOwner: string = owner || DEF_OWNER
+        const id: UUID = this.getIdByName(name, gvOwner)
+        console.log('id: ' + id)
         return this.getGameValueEntryById(id)
     }
 
@@ -185,7 +197,7 @@ class GameValueManager {
             try {
                 const { baseVal, name, owner, operation, values } = d
                 const lookupValues: Array<GameValue> = values.map(name => {
-                    const gvEntry = this.getGameValueEntryByName(name)
+                    const gvEntry = this.getGameValueEntryByName(name, owner)
                     return gvEntry.gameValue
                 })
                 console.dir(lookupValues, { depth: null })
@@ -278,6 +290,6 @@ export { GameValueManager, importTemplate }
 // const gvm: GameValueManager = new GameValueManager()
 // gvm.importJSON(importTemplate)
 // console.dir(gvm, { depth: null })
-// const acId: UUID = gvm.getIdByName('AC')
+// const acId: UUID = gvm.getIdByName('AC', 'P1')
 // console.log(gvm.invokeById(acId))
 // console.log(gvm.invokeById(acId))
