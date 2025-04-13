@@ -1,4 +1,5 @@
 import { GameValue, Scalar, Calc, Die } from "./GameValues.ts"
+import type { Effect, Effects, Tags } from "./GameValues.ts"
 import crypto from "crypto"
 type UUID = crypto.UUID
 
@@ -11,58 +12,107 @@ type IDDictionary = Record<UUID, GameValueEntry>
 type ValuesOwned = Set<UUID>
 type ValueOwners = Record<string, ValuesOwned>
 type NameOwnersEntry = Record<string, UUID>
-type NameDictionary = Record<string, NameOwnersEntry>
+type NameLookup = Record<string, NameOwnersEntry>
+type EffectDictionary = Record<string, Effect>
 
 type GVImportStatic = {
     'baseVal': number,
     'name': string,
-    'owner'?: string
+    'owner'?: string,
+    'effects'?: Effects,
+    'tags'?: Array<string>
 }
 type GVImportScalar = {
     'baseVal': number,
     'name': string,
     'min': number,
     'max': number,
-    'owner'?: string
+    'owner'?: string,
+    'effects'?: Effects,
+    'tags'?: Array<string>
 }
 type GVImportCalc = {
     'baseVal': number,
     'name': string,
     'operation': string,
     'values': Array<string>,
-    'owner'?: string
+    'owner'?: string,
+    'effects'?: Effects,
+    'tags'?: Array<string>
 }
 type GVImportDie = {
     'baseVal': number,
     'name': string,
     'sides': number,
     'quantity': number,
-    'owner'?: string
+    'owner'?: string,
+    'effects'?: Effects,
+    'tags'?: Array<string>
 }
 
 class GameValueManager {
-    private _idLookup: IDDictionary
-    private _nameLookup: NameDictionary
+    private _idDictionary: IDDictionary
+    private _nameLookup: NameLookup
     private _valueOwners: ValueOwners
+    private _effectDictionary: EffectDictionary
 
-    constructor(idLookup: IDDictionary = {}, nameLookup: NameDictionary = {}, valueOwners: ValueOwners = {}) {
-        this._idLookup = idLookup
+    constructor(
+        idDictionary: IDDictionary = {},
+        nameLookup: NameLookup = {},
+        valueOwners: ValueOwners = {},
+        effectDictionary: EffectDictionary = {}) {
+        this._idDictionary = idDictionary
         this._nameLookup = nameLookup
         this._valueOwners = valueOwners
+        this._effectDictionary = effectDictionary
     }
 
-    get idLookup(): IDDictionary {
-        return this._idLookup
+    get idDictionary(): IDDictionary {
+        return this._idDictionary
     }
 
-    get nameLookup(): NameDictionary {
+    get nameLookup(): NameLookup {
         return this._nameLookup
     }
 
-    add(gameValue: GameValue, owner?: string): boolean {
+    get effectDictionary(): EffectDictionary {
+        return this._effectDictionary
+    }
+
+    add(addition: GameValue | Effect, owner?: string): boolean {
+        const additionClass: string = addition.constructor.name
+        const parentClass: string = Object.getPrototypeOf(addition.constructor).name
+        const additionMethod: string = parentClass === 'GameValue' ? 'GameValue' : additionClass
+        switch (additionMethod) {
+            case 'GameValue':
+                this.addGameValue(addition as GameValue, owner)
+                break;
+            case 'Effect':
+                this.addEffect(addition as Effect)
+                break;
+            default:
+                return false
+                break;
+        }
+
+        return true
+    }
+
+    addEffect(effect: Effect) {
+        if (this._effectDictionary[effect.name]) {
+            console.warn(`The effect name \'${effect.name}\' is already taken`)
+
+            return false
+        }
+
+        this._effectDictionary[effect.name] = effect
+        return true
+    }
+
+    addGameValue(gameValue: GameValue, owner?: string): boolean {
         const gvOwner: string = owner || DEF_OWNER
 
-        this._idLookup[gameValue.id] = {
+        this._idDictionary[gameValue.id] = {
             owner: gvOwner,
             gameValue: gameValue
         }
@@ -73,6 +123,7 @@ class GameValueManager {
 
         if (this._nameLookup[gameValue.name][gvOwner]) {
             console.warn(`The name ${gameValue.name} is already taken for owner ${gvOwner}`)
+            return false
         }
         this._nameLookup[gameValue.name][gvOwner] = gameValue.id
 
@@ -84,17 +135,16 @@ class GameValueManager {
 
     remove(id: UUID, owner?: string): boolean {
         const gvOwner = owner || DEF_OWNER
-        const gvEntry = this._idLookup[id]
+        const gvEntry = this._idDictionary[id]
 
         this._valueOwners[gvEntry.owner].delete(id)
         delete this._nameLookup[gvEntry.gameValue.name][gvOwner]
-        delete this._idLookup[id]
+        delete this._idDictionary[id]
 
         return true
     }
 
     outputSheet(owner?: string): object {
-        console.log(owner)
         const sheet: object = {}
         const owners: Array<string> = [DEF_OWNER]
         const ids: Array<UUID> = []
@@ -111,7 +161,7 @@ class GameValueManager {
         })
 
         ids.forEach(id => {
-            const gv: GameValue = this._idLookup[id].gameValue
+            const gv: GameValue = this._idDictionary[id].gameValue
             sheet[gv.name] = gv.displaySimple
         })
         return sheet
@@ -124,10 +174,11 @@ class GameValueManager {
     }
 
     getGameValueEntryById(id: UUID): GameValueEntry {
-        return this._idLookup[id]
+        return this._idDictionary[id]
     }
 
     getIdByName(name: string, owner: string = DEF_OWNER): UUID {
+        console.dir(this._nameLookup, { depth: null })
         const nameEntry: NameOwnersEntry = this._nameLookup[name]
         const id = nameEntry[owner] ? nameEntry[owner] : nameEntry[DEF_OWNER]
         if (!id) console.warn(`No Game Value found with name: ${name} for ${owner}`)
@@ -137,7 +188,6 @@ class GameValueManager {
     getGameValueEntryByName(name: string, owner?: string): GameValueEntry {
         const gvOwner: string = owner || DEF_OWNER
         const id: UUID = this.getIdByName(name, gvOwner)
-        console.log('id: ' + id)
         return this.getGameValueEntryById(id)
     }
 
@@ -154,6 +204,7 @@ class GameValueManager {
         if (data['scalar']) this.createGVScalars(data['scalar'])
         if (data['die']) this.createGVDice(data['die'])
         if (data['calc']) this.createGVCalcs(data['calc'])
+        if (data['effect']) this.createEffects(data['effect'])
         return true
     }
 
@@ -162,8 +213,8 @@ class GameValueManager {
             const d = dataArr[i];
 
             try {
-                const { baseVal, name, owner } = d
-                const gv: GameValue = new GameValue(baseVal, name)
+                const { baseVal, name, owner, effects, tags } = d
+                const gv: GameValue = new GameValue(baseVal, name, effects, tags)
                 this.add(gv, owner)
             } catch (error) {
                 throw console.warn(`Could not import static value ${JSON.stringify(d)}:\n\n${error}`)
@@ -179,7 +230,7 @@ class GameValueManager {
             const d = dataArr[i];
 
             try {
-                const { baseVal, name, owner, min, max } = d
+                const { baseVal, name, owner, min, max, effects, tags } = d
                 const gv: Scalar = new Scalar(baseVal, name, min, max)
                 this.add(gv, owner)
             } catch (error) {
@@ -195,13 +246,13 @@ class GameValueManager {
             const d = dataArr[i];
 
             try {
-                const { baseVal, name, owner, operation, values } = d
+                const { baseVal, name, owner, operation, values, effects, tags } = d
                 const lookupValues: Array<GameValue> = values.map(name => {
                     const gvEntry = this.getGameValueEntryByName(name, owner)
                     return gvEntry.gameValue
                 })
                 console.dir(lookupValues, { depth: null })
-                const gv: Calc = new Calc(baseVal, name, lookupValues, operation)
+                const gv: Calc = new Calc(baseVal, name, lookupValues, operation, effects, tags)
                 this.add(gv, owner)
             } catch (error) {
                 throw console.warn(`Could not import calc value ${JSON.stringify(d)}:\n\n${error}`)
@@ -216,11 +267,27 @@ class GameValueManager {
             const d = dataArr[i];
 
             try {
-                const { baseVal, name, owner, sides, quantity } = d
-                const gv: Die = new Die(baseVal, name, sides, quantity)
+                const { baseVal, name, owner, sides, quantity, effects, tags } = d
+                const gv: Die = new Die(baseVal, name, sides, quantity, effects, tags)
                 this.add(gv, owner)
             } catch (error) {
                 throw console.warn(`Could not import die value ${JSON.stringify(d)}:\n\n${error}`)
+            }
+        }
+
+        return true
+    }
+
+    createEffects(dataArr: Array<Effect>): boolean {
+        for (let i = 0; i < dataArr.length; i++) {
+            const d = dataArr[i];
+
+            try {
+                const { name, values, operation, targetTags, negateBase } = d
+                const effect: Effect = d
+                this.add(d)
+            } catch (error) {
+                throw console.warn(`Could not import effect value ${JSON.stringify(d)}:\n\n${error}`)
             }
         }
 
@@ -250,6 +317,14 @@ const importTemplate: string = JSON.stringify({
             'min': 1, 'max': 20
         }
     ],
+    'die': [
+        {
+            'baseVal': 1,
+            'name': 'D20',
+            'sides': 20,
+            'quantity': 1,
+            'tags': ['critable']
+        }],
     'calc': [
         {
             'baseVal': 1,
@@ -273,12 +348,13 @@ const importTemplate: string = JSON.stringify({
             'operation': '#D20 + #DexMod'
         }
     ],
-    'die': [
+    'effect': [
         {
-            'baseVal': 1,
-            'name': 'D20',
-            'sides': 20,
-            'quantity': 1
+            'name': 'crit',
+            'values': {},
+            'operation': `#$SELF_EFFECT`,
+            'targetTags': ['critable'],
+            'negateBase': false
         }
     ]
 })
@@ -287,9 +363,9 @@ export { GameValueManager, importTemplate }
 
 //Test
 
-// const gvm: GameValueManager = new GameValueManager()
-// gvm.importJSON(importTemplate)
-// console.dir(gvm, { depth: null })
-// const acId: UUID = gvm.getIdByName('AC', 'P1')
-// console.log(gvm.invokeById(acId))
-// console.log(gvm.invokeById(acId))
+const gvm: GameValueManager = new GameValueManager()
+gvm.importJSON(importTemplate)
+console.dir(gvm, { depth: null })
+const acId: UUID = gvm.getIdByName('AC', 'P1')
+console.log(gvm.invokeById(acId))
+console.log(gvm.invokeById(acId))
