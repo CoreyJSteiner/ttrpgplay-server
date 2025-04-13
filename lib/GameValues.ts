@@ -9,13 +9,35 @@ type Operation = string
 type Invocations = Record<string, number>
 type Tags = Set<string>
 
-type Effect = {
-    name: string,
-    values: Invocations,
-    operation: Operation,
+// type Effect = {
+//     name: string,
+//     values: Invocations,
+//     operation: Operation,
+//     targetTags?: Tags
+//     negateBase?: boolean
+// }
+class Effect {
+    name: string
+    values: Invocations
+    operation: Operation
     targetTags?: Tags
     negateBase?: boolean
+
+    constructor(
+        name: string,
+        values: Invocations,
+        operation: Operation,
+        targetTags?: Array<string>,
+        negateBase?: boolean) {
+        this.name = name
+        this.values = values
+        this.operation = operation
+        this.targetTags = new Set(targetTags)
+        this.negateBase = negateBase
+    }
 }
+
+
 type Effects = Array<Effect>
 
 type InvokeOptions = {
@@ -369,5 +391,5 @@ function performOperation(invocations: Invocations, operation: Operation): numbe
 // // dex.setValue(16)
 // console.log(damage.invoke({ log: true, useEffects: true, effects: [crit] }))
 
-export { GameValue, Scalar, Calc, Die }
-export type { Effect, Effects, Tags }
+export { GameValue, Scalar, Calc, Die, Effect }
+export type { Effects, Invocations, Tags, Operation }

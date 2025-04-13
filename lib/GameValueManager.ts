@@ -1,5 +1,5 @@
-import { GameValue, Scalar, Calc, Die } from "./GameValues.ts"
-import type { Effect, Effects, Tags } from "./GameValues.ts"
+import { GameValue, Scalar, Calc, Die, Effect } from "./GameValues.ts"
+import type { Effects, Invocations, Operation } from "./GameValues.ts"
 import crypto from "crypto"
 import gvmTestImport from '../assets/imports/gvmTestImport.json' with { type: "json" }
 type UUID = crypto.UUID
@@ -50,6 +50,13 @@ type GVImportDie = {
     'effects'?: Effects,
     'tags'?: Array<string>
 }
+type EffectImport = {
+    name: string,
+    values: Invocations,
+    operation: Operation,
+    targetTags: Array<string>,
+    negateBase: boolean
+}
 
 class GameValueManager {
     private _idDictionary: IDDictionary
@@ -84,11 +91,13 @@ class GameValueManager {
         const additionClass: string = addition.constructor.name
         const parentClass: string = Object.getPrototypeOf(addition.constructor).name
         const additionMethod: string = parentClass === 'GameValue' ? 'GameValue' : additionClass
+        console.log('additionMethod: ' + additionMethod)
         switch (additionMethod) {
             case 'GameValue':
                 this.addGameValue(addition as GameValue, owner)
                 break;
             case 'Effect':
+                console.log('effect!')
                 this.addEffect(addition as Effect)
                 break;
             default:
@@ -277,14 +286,14 @@ class GameValueManager {
         return true
     }
 
-    createEffects(dataArr: Array<Effect>): boolean {
+    createEffects(dataArr: Array<EffectImport>): boolean {
         for (let i = 0; i < dataArr.length; i++) {
             const d = dataArr[i];
 
             try {
                 const { name, values, operation, targetTags, negateBase } = d
-                const effect: Effect = d
-                this.add(d)
+                const effect: Effect = new Effect(name, values, operation, targetTags, negateBase)
+                this.add(effect)
             } catch (error) {
                 throw console.warn(`Could not import effect value ${JSON.stringify(d)}:\n\n${error}`)
             }
