@@ -1,6 +1,7 @@
 import { GameValue, Scalar, Calc, Die } from "./GameValues.ts"
 import type { Effect, Effects, Tags } from "./GameValues.ts"
 import crypto from "crypto"
+import gvmTestImport from '../assets/imports/gvmTestImport.json' with { type: "json" }
 type UUID = crypto.UUID
 
 const DEF_OWNER: string = 'public'
@@ -178,7 +179,6 @@ class GameValueManager {
     }
 
     getIdByName(name: string, owner: string = DEF_OWNER): UUID {
-        console.dir(this._nameLookup, { depth: null })
         const nameEntry: NameOwnersEntry = this._nameLookup[name]
         const id = nameEntry[owner] ? nameEntry[owner] : nameEntry[DEF_OWNER]
         if (!id) console.warn(`No Game Value found with name: ${name} for ${owner}`)
@@ -251,7 +251,6 @@ class GameValueManager {
                     const gvEntry = this.getGameValueEntryByName(name, owner)
                     return gvEntry.gameValue
                 })
-                console.dir(lookupValues, { depth: null })
                 const gv: Calc = new Calc(baseVal, name, lookupValues, operation, effects, tags)
                 this.add(gv, owner)
             } catch (error) {
@@ -297,75 +296,15 @@ class GameValueManager {
 
 //Example JSON
 
-const importTemplate: string = JSON.stringify({
-    'static': [
-        {
-            'baseVal': 10,
-            'name': 'BaseAC'
-        },
-        {
-            'baseVal': 3,
-            'owner': 'P1',
-            'name': 'DexMod'
-        }
-    ],
-    'scalar': [
-        {
-            'baseVal': 3,
-            'owner': 'P1',
-            'name': 'PlayerLevel',
-            'min': 1, 'max': 20
-        }
-    ],
-    'die': [
-        {
-            'baseVal': 1,
-            'name': 'D20',
-            'sides': 20,
-            'quantity': 1,
-            'tags': ['critable']
-        }],
-    'calc': [
-        {
-            'baseVal': 1,
-            'owner': 'P1',
-            'name': 'AC',
-            'values': [
-                'BaseAC',
-                'DexMod',
-                'D20'
-            ],
-            'operation': '#BaseAC + #DexMod'
-        },
-        {
-            'baseVal': 1,
-            'owner': 'P1',
-            'name': 'ATK',
-            'values': [
-                'DexMod',
-                'D20'
-            ],
-            'operation': '#D20 + #DexMod'
-        }
-    ],
-    'effect': [
-        {
-            'name': 'crit',
-            'values': {},
-            'operation': `#$SELF_EFFECT`,
-            'targetTags': ['critable'],
-            'negateBase': false
-        }
-    ]
-})
+const testImportStr: string = JSON.stringify(gvmTestImport)
 
-export { GameValueManager, importTemplate }
+export { GameValueManager, testImportStr }
 
 //Test
 
-const gvm: GameValueManager = new GameValueManager()
-gvm.importJSON(importTemplate)
-console.dir(gvm, { depth: null })
-const acId: UUID = gvm.getIdByName('AC', 'P1')
-console.log(gvm.invokeById(acId))
-console.log(gvm.invokeById(acId))
+// const gvm: GameValueManager = new GameValueManager()
+// gvm.importJSON(testImportStr)
+// console.dir(gvm, { depth: null })
+// const acId: UUID = gvm.getIdByName('AC', 'P1')
+// console.log(gvm.invokeById(acId))
+// console.log(gvm.invokeById(acId))

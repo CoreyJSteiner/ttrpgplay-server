@@ -5,7 +5,7 @@ import { fileURLToPath } from 'url'
 import { Server, Socket } from 'socket.io'
 import crypto from 'crypto'
 import { DiceRoll } from '@dice-roller/rpg-dice-roller'
-import { GameValueManager, importTemplate } from './lib/GameValueManager.ts'
+import { GameValueManager, testImportStr } from './lib/GameValueManager.ts'
 
 const app = express()
 app.use(express.static("public"));
@@ -16,7 +16,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const manager: GameValueManager = new GameValueManager()
-manager.importJSON(importTemplate)
+manager.importJSON(testImportStr)
+console.dir(manager, { depth: null })
 
 type UUID = string
 

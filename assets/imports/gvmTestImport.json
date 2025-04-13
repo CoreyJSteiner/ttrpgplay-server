@@ -1,0 +1,67 @@
+{
+  "static": [
+    {
+      "baseVal": 10,
+      "name": "BaseAC"
+    },
+    {
+      "baseVal": 3,
+      "owner": "P1",
+      "name": "DexMod"
+    }
+  ],
+  "scalar": [
+    {
+      "baseVal": 3,
+      "owner": "P1",
+      "name": "PlayerLevel",
+      "min": 1,
+      "max": 20
+    }
+  ],
+  "die": [
+    {
+      "baseVal": 1,
+      "name": "D20",
+      "sides": 20,
+      "quantity": 1,
+      "tags": [
+        "critable"
+      ]
+    }
+  ],
+  "calc": [
+    {
+      "baseVal": 1,
+      "owner": "P1",
+      "name": "AC",
+      "values": [
+        "BaseAC",
+        "DexMod",
+        "D20"
+      ],
+      "operation": "#BaseAC + #DexMod"
+    },
+    {
+      "baseVal": 1,
+      "owner": "P1",
+      "name": "ATK",
+      "values": [
+        "DexMod",
+        "D20"
+      ],
+      "operation": "#D20 + #DexMod"
+    }
+  ],
+  "effect": [
+    {
+      "name": "crit",
+      "values": {},
+      "operation": "#$SELF_EFFECT",
+      "targetTags": [
+        "critable"
+      ],
+      "negateBase": false
+    }
+  ]
+}
