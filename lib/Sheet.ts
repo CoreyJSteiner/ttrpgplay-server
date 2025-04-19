@@ -1,59 +1,41 @@
+import { UUID } from "crypto"
 import { GameValue, Scalar, Calc, Die } from "./GameValues.ts"
 
-type SheetValue = {
-    name: string,
-    gameValue: GameValue
-}
-
-type SheetValueMap = Record<string, SheetValue>
-
+type Options = Array<string>    //Should this be a GameValue?
 
 type SlotTypes = 'GameValue' | 'Calc' | 'Scalar' | 'Die' | 'Text' | 'Option'
 type SlotControl = 'Admin' | 'Owner' | 'All'
-type Options = Array<string>
 type Slot = {
     type: SlotTypes,
     control: SlotControl,
-    value: GameValue | Scalar | Calc | Die | string | Options
-    required: boolean
+    required: boolean,
+    value?: GameValue | Scalar | Calc | Die | string | Options | null | undefined
+    // invokeCondition?: string
 }
 
-class Sheet {
-    sheetValues: SheetValueMap
+type Grouping = Set<UUID>
+type Groupings = Record<string, Grouping>
+
+type SheetOptions = {
+    slots: Record<string, Slot>
+    groupings: Groupings
+    // operations: object
+    // triggers: object
+}
+
+class GVMSheet {
     slots: Record<string, Slot>     // Paramitarized value
-    groupings: object
-    operations: object
-    triggers: object
+    groupings: Groupings
+    // operations: object
+    // triggers: object
 
-    constructor(sheetValues: SheetValueMap = {}) {
-        this.sheetValues = sheetValues
+    constructor(sheetOptions: SheetOptions) {
+        this.slots = sheetOptions.slots || {}
+        this.groupings = sheetOptions.groupings || {}
+        // this.operations = sheetOptions.operations || {}
+        // this.triggers = sheetOptions.triggers || {}
     }
 
-    getVal(calcName: string): SheetValue {
-        return this.sheetValues[calcName]
-    }
-
-    getSheetOutput(): object {
-        const output = {}
-
-        Object.keys(this.sheetValues).forEach(key => {
-            const { name, gameValue } = this.sheetValues[key]
-            output[name] = gameValue.displaySimple
-        })
-
-        return output
-    }
-
-    configTest() {
-        this.sheetValues["HP"] = { gameValue: new GameValue(666, "HP"), name: "HP" }
-        this.sheetValues["AC"] = { gameValue: new GameValue(20, "AC"), name: "AC" }
-        this.sheetValues["STR"] = { gameValue: new GameValue(10, "STR"), name: "STR" }
-        this.sheetValues["DEX"] = { gameValue: new GameValue(11, "DEX"), name: "DEX" }
-        this.sheetValues["CON"] = { gameValue: new GameValue(12, "CON"), name: "CON" }
-        this.sheetValues["INT"] = { gameValue: new GameValue(13, "INT"), name: "WIS" }
-        this.sheetValues["WIS"] = { gameValue: new GameValue(14, "WIS"), name: "INT" }
-        this.sheetValues["CHA"] = { gameValue: new GameValue(15, "CHA"), name: "CHA" }
-    }
 }
 
-export { Sheet }
+export { GVMSheet }
