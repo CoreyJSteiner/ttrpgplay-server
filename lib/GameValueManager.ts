@@ -95,14 +95,14 @@ class GameValueManager {
         switch (additionMethod) {
             case 'GameValue':
                 this.addGameValue(addition as GameValue, owner)
-                break;
+                break
             case 'Effect':
                 console.log('effect!')
                 this.addEffect(addition as Effect)
-                break;
+                break
             default:
                 return false
-                break;
+                break
         }
 
         return true
@@ -219,7 +219,7 @@ class GameValueManager {
 
     createGVStatics(dataArr: Array<GVImportStatic>): boolean {
         for (let i = 0; i < dataArr.length; i++) {
-            const d = dataArr[i];
+            const d = dataArr[i]
 
             try {
                 const { baseVal, name, owner, effects, tags } = d
@@ -236,7 +236,7 @@ class GameValueManager {
 
     createGVScalars(dataArr: Array<GVImportScalar>): boolean {
         for (let i = 0; i < dataArr.length; i++) {
-            const d = dataArr[i];
+            const d = dataArr[i]
 
             try {
                 const { baseVal, name, owner, min, max, effects, tags } = d
@@ -252,7 +252,7 @@ class GameValueManager {
 
     createGVCalcs(dataArr: Array<GVImportCalc>): boolean {
         for (let i = 0; i < dataArr.length; i++) {
-            const d = dataArr[i];
+            const d = dataArr[i]
 
             try {
                 const { baseVal, name, owner, operation, values, effects, tags } = d
@@ -272,7 +272,7 @@ class GameValueManager {
 
     createGVDice(dataArr: Array<GVImportDie>): boolean {
         for (let i = 0; i < dataArr.length; i++) {
-            const d = dataArr[i];
+            const d = dataArr[i]
 
             try {
                 const { baseVal, name, owner, sides, quantity, effects, tags } = d
@@ -288,7 +288,7 @@ class GameValueManager {
 
     createEffects(dataArr: Array<EffectImport>): boolean {
         for (let i = 0; i < dataArr.length; i++) {
-            const d = dataArr[i];
+            const d = dataArr[i]
 
             try {
                 const { name, values, operation, targetTags, negateBase } = d

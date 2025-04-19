@@ -9,13 +9,6 @@ type Operation = string
 type Invocations = Record<string, number>
 type Tags = Set<string>
 
-// type Effect = {
-//     name: string,
-//     values: Invocations,
-//     operation: Operation,
-//     targetTags?: Tags
-//     negateBase?: boolean
-// }
 class Effect {
     name: string
     values: Invocations
@@ -67,7 +60,6 @@ class GameValue {
     constructor(baseValue: number, name: string, effects?: Effects, tags?: Array<string>) {
         this._name = name
         this._baseValue = baseValue
-        // this._effects = effects || []
         this._effectiveValue = this._baseValue
         this._id = randomUUID()
         this._tags = new Set(tags)
@@ -80,10 +72,6 @@ class GameValue {
     get baseValue(): number {
         return this._baseValue
     }
-
-    // get effects(): Effects {
-    //     return this._effects
-    // }
 
     get id(): UUID {
         return this._id
@@ -187,7 +175,7 @@ class Scalar extends GameValue {
         if (value >= this._min && value <= this._max) {
             return super.setValue(value)
         } else {
-            throw new Error(`Value '${value}' does not conform to Scalar threshold (${this.min} - ${this.max})`);
+            throw new Error(`Value '${value}' does not conform to Scalar threshold (${this.min} - ${this.max})`)
         }
     }
 
@@ -232,7 +220,6 @@ class Calc extends GameValue {
         this._values = values
         this._operation = operation
 
-        //Initialize baseValue
         this.setValue(this.invoke(InitInvokeDefault))
     }
 
@@ -261,19 +248,19 @@ class Calc extends GameValue {
         switch (this._operation) {
             case '+':
                 this.setValue(Object.values(invocations).reduce((acc, cur) => acc + cur))
-                break;
+                break
             case '-':
                 this.setValue(Object.values(invocations).reduce((acc, cur) => acc - cur))
-                break;
+                break
             case '*':
                 this.setValue(Object.values(invocations).reduce((acc, cur) => acc * cur))
-                break;
+                break
             case '/':
                 this.setValue(Object.values(invocations).reduce((acc, cur) => acc / cur))
-                break;
+                break
             default:
                 this.setValue(this.callOperation(invocations))
-                break;
+                break
         }
 
         return super.invoke(invokeOptions)
@@ -325,7 +312,7 @@ function performOperation(invocations: Invocations, operation: Operation): numbe
     let replacePos: Array<number> = []
     let replacing: boolean = false
     for (let i = 0; i < operation.length; i++) {
-        const curLetter = operation[i];
+        const curLetter = operation[i]
         if (replacing) {
             if (replacePos.length === 0) {
                 replacePos.push(i)

@@ -1,4 +1,4 @@
-import { GameValue } from "./GameValues.ts"
+import { GameValue, Scalar, Calc, Die } from "./GameValues.ts"
 
 type SheetValue = {
     name: string,
@@ -7,8 +7,23 @@ type SheetValue = {
 
 type SheetValueMap = Record<string, SheetValue>
 
+
+type SlotTypes = 'GameValue' | 'Calc' | 'Scalar' | 'Die' | 'Text' | 'Option'
+type SlotControl = 'Admin' | 'Owner' | 'All'
+type Options = Array<string>
+type Slot = {
+    type: SlotTypes,
+    control: SlotControl,
+    value: GameValue | Scalar | Calc | Die | string | Options
+    required: boolean
+}
+
 class Sheet {
     sheetValues: SheetValueMap
+    slots: Record<string, Slot>     // Paramitarized value
+    groupings: object
+    operations: object
+    triggers: object
 
     constructor(sheetValues: SheetValueMap = {}) {
         this.sheetValues = sheetValues
@@ -24,7 +39,7 @@ class Sheet {
         Object.keys(this.sheetValues).forEach(key => {
             const { name, gameValue } = this.sheetValues[key]
             output[name] = gameValue.displaySimple
-        });
+        })
 
         return output
     }
