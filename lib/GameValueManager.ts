@@ -2,9 +2,11 @@ import { GameValue, Scalar, Calc, Die, Effect } from "./GameValues.ts"
 import type { Effects, Invocations, Operation } from "./GameValues.ts"
 import crypto from "crypto"
 import gvmTestImport from '../assets/imports/gvmTestImport.json' with { type: "json" }
+import { appendFile } from "fs"
 type UUID = crypto.UUID
 
 const DEF_OWNER: string = 'public'
+
 type GameValueEntry = {
     owner: string,
     gameValue: GameValue
@@ -63,6 +65,7 @@ class GameValueManager {
     private _nameLookup: NameLookup
     private _valueOwners: ValueOwners
     private _effectDictionary: EffectDictionary
+    private _reservedDictionary: Set<string>
 
     constructor(
         idDictionary: IDDictionary = {},
@@ -73,6 +76,7 @@ class GameValueManager {
         this._nameLookup = nameLookup
         this._valueOwners = valueOwners
         this._effectDictionary = effectDictionary
+        this._reservedDictionary = new Set([DEF_OWNER])
     }
 
     get idDictionary(): IDDictionary {
@@ -87,7 +91,20 @@ class GameValueManager {
         return this._effectDictionary
     }
 
+    get reservedDictionary(): Set<string> {
+        return this._reservedDictionary
+    }
+
+    isReserved(string: string): boolean {
+        return this._reservedDictionary.has(string)
+    }
+
     add(addition: GameValue | Effect, owner?: string): boolean {
+        if (this.isReserved(addition.name)) {
+            console.warn(`\'${addition.name}\' is a reserved string`)
+            return false
+        }
+
         const additionClass: string = addition.constructor.name
         const parentClass: string = Object.getPrototypeOf(addition.constructor).name
         const additionMethod: string = parentClass === 'GameValue' ? 'GameValue' : additionClass

@@ -23,6 +23,8 @@ type SheetOptions = {
     // triggers: object
 }
 
+// Sheets should be responsible for creating thier values in the GVM. They should serve as a template and as a 
+// reference. There should be a config that is a singleton that they can share. GVMSheetConfig should be the template.
 class GVMSheet {
     slots: Record<string, Slot>     // Paramitarized value
     groupings: Groupings
@@ -45,8 +47,12 @@ class GVMSheet {
 // This will help segemnt the logic a bit and keep it clean. GVM should be able to target value Params like owner and
 // name so that I can say 'corey@dex'. But i don;t know now that seems messy. why not just let the sheet hold the value?
 // Beacuse I want to be able to say 'player@dex'. Ok so then maybe the paradigm is inverted and breakouts are used for
-// archived sheets? Maybe. Yeah, the system should favor using GVM but should be abnle to use breakouts for exceptions,
+// archived sheets? Maybe. Yeah, the system should favor using GVM but should be able to use breakouts for exceptions,
 // pulling an old character sheet seems like a good usecase. 'Saved Sheet' type thing. Snapshot.
+
+// Right, then you should be able to take the snapshot and use it to revert the GVM. On the snap sheet there should be
+// a visual indication that the value is out of sync with the GVM. If its the whole sheet, use a border, if its a whole
+// section, than just the section. Just a value, then just the value.
 class SnapSheet {
     overrideValues: object
 
