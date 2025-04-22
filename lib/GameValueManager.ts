@@ -101,7 +101,11 @@ class GameValueManager {
 
     add(addition: GameValue | Effect, owner?: string): boolean {
         if (this.isReserved(addition.name)) {
-            console.warn(`\'${addition.name}\' is a reserved string`)
+            console.warn(`\'${addition.name}\' cannot be added as it is a reserved string`)
+            return false
+        }
+        if (owner && this.isReserved(owner)) {
+            console.warn(`\'${owner}\' cannot be an owner as it is a reserved string`)
             return false
         }
 
