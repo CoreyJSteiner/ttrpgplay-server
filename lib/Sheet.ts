@@ -21,6 +21,7 @@ type Groupings = Record<string, Grouping>
 type SlotDict = Record<string, Slot>
 type SheetOptions = {
     slots: SlotDict
+    template?: boolean
     // groupings?: Groupings
     // operations: object
     // triggers: object
@@ -30,21 +31,39 @@ type SheetOptions = {
 // Sheets should be responsible for creating thier values in the GVM. They should serve as a template and as a 
 // reference. There should be a config that is a singleton that they can share. GVMSheetConfig should be the template.
 class GVMSheet {
-    slots: SlotDict     // Paramitarized value
+    private _slots: SlotDict     // Paramitarized value
+    private _template: boolean
     // groupings: Groupings
     // operations: object
     // triggers: object
 
     constructor(sheetOptions: SheetOptions) {
-        this.slots = sheetOptions.slots || {}
+        this._slots = sheetOptions.slots || {}
+        this._template = sheetOptions.template || false
         // this.groupings = sheetOptions.groupings || {}
         // this.operations = sheetOptions.operations || {}
         // this.triggers = sheetOptions.triggers || {}
     }
 
+    get slots(): SlotDict {
+        return this._slots
+    }
+
+    get template(): boolean {
+        return this._template
+    }
+
+    get isTemplate(): boolean {
+        return this._template
+    }
+
     configured(): boolean {
-        Object.keys(this.slots).forEach(slotKey => {
-            const slot = this.slots[slotKey]
+        if (this.isTemplate) {
+            return false
+        }
+
+        Object.keys(this._slots).forEach(slotKey => {
+            const slot = this._slots[slotKey]
             if (!GameValue.isGameValue(slot.value)) {
                 return false
             }
@@ -56,14 +75,28 @@ class GVMSheet {
     createTemplate(): GVMSheet {
         const clearedSlots: SlotDict = {}
 
-        Object.keys(this.slots).forEach(slotKey => {
-            const { type, scope, required } = this.slots[slotKey]
+        Object.keys(this._slots).forEach(slotKey => {
+            const { type, scope, required } = this._slots[slotKey]
             clearedSlots[slotKey] = { type, scope, required }
         })
 
         return new GVMSheet({
-            slots: clearedSlots
+            slots: clearedSlots,
+            template: true
         })
+    }
+
+    addSlot(slotName: string, slot: Slot): boolean {
+        if (this.isTemplate) {
+            return false
+        }
+
+        if (!this._slots[slotName]) {
+            this._slots[slotName] = slot
+            return true
+        }
+
+        return false
     }
 }
 
