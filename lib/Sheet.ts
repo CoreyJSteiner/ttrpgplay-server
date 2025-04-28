@@ -1,7 +1,8 @@
 import { UUID } from "crypto"
 import { GameValue, Scalar, Calc, Die } from "./GameValues.ts"
+import { GameValueManager } from "./GameValueManager.ts"
 
-type Options = Array<string>    //Should this be a GameValue?
+// type Options = Array<string>    //Should this be a GameValue?
 
 type SlotTypes = 'GameValue' | 'Calc' | 'Scalar' | 'Die' | 'Text' | 'Option'
 // type SlotControl = 'Admin' | 'Owner' | 'All'
@@ -11,7 +12,7 @@ type Slot = {
     // control: SlotControl,
     scope: SlotScope
     required: boolean,
-    value?: GameValue | Scalar | Calc | Die | string | Options | null | undefined
+    id?: UUID
     // invokeCondition?: string
 }
 
@@ -33,13 +34,15 @@ type SheetOptions = {
 class GVMSheet {
     private _slots: SlotDict     // Paramitarized value
     private _template: boolean
+    private _gvm: GameValueManager
     // groupings: Groupings
     // operations: object
     // triggers: object
 
-    constructor(sheetOptions: SheetOptions) {
+    constructor(gvm, sheetOptions: SheetOptions) {
         this._slots = sheetOptions.slots || {}
         this._template = sheetOptions.template || false
+        this._gvm = gvm
         // this.groupings = sheetOptions.groupings || {}
         // this.operations = sheetOptions.operations || {}
         // this.triggers = sheetOptions.triggers || {}
@@ -64,12 +67,33 @@ class GVMSheet {
 
         Object.keys(this._slots).forEach(slotKey => {
             const slot = this._slots[slotKey]
-            if (!GameValue.isGameValue(slot.value)) {
+            if (!slot.id) {
                 return false
             }
         })
 
         return true
+    }
+
+    getSlot(slotName: string): Slot {
+        return this._slots[slotName]
+    }
+
+    getSlotGameValue(slotName: string): GameValue | undefined {
+        const slotId = this._slots[slotName].id
+        if (slotId) {
+            const gameValueEntry = this._gvm.getGameValueEntryById(slotId)
+
+            return gameValueEntry ? gameValueEntry.gameValue : undefined
+        }
+    }
+
+    invokeSlotGameValue(slotName: string): number | undefined {
+        const gameValue = this.getSlotGameValue(slotName)
+        if (gameValue) {
+            return gameValue.invoke()
+        }
+        return undefined
     }
 
     createTemplate(): GVMSheet {
@@ -80,7 +104,7 @@ class GVMSheet {
             clearedSlots[slotKey] = { type, scope, required }
         })
 
-        return new GVMSheet({
+        return new GVMSheet(this._gvm, {
             slots: clearedSlots,
             template: true
         })
@@ -97,6 +121,10 @@ class GVMSheet {
         }
 
         return false
+    }
+
+    fillGameValue(slotName: string, gameValue: GameValue): boolean {
+        return true
     }
 }
 
