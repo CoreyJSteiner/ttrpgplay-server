@@ -4,10 +4,12 @@ import { GameValue, Scalar, Calc, Die } from "./GameValues.ts"
 type Options = Array<string>    //Should this be a GameValue?
 
 type SlotTypes = 'GameValue' | 'Calc' | 'Scalar' | 'Die' | 'Text' | 'Option'
-type SlotControl = 'Admin' | 'Owner' | 'All'
+// type SlotControl = 'Admin' | 'Owner' | 'All'
+type SlotScope = 'Public' | 'Player' | 'Sheet'
 type Slot = {
     type: SlotTypes,
-    control: SlotControl,
+    // control: SlotControl,
+    scope: SlotScope
     required: boolean,
     value?: GameValue | Scalar | Calc | Die | string | Options | null | undefined
     // invokeCondition?: string
@@ -16,28 +18,53 @@ type Slot = {
 type Grouping = Set<UUID>
 type Groupings = Record<string, Grouping>
 
+type SlotDict = Record<string, Slot>
 type SheetOptions = {
-    slots: Record<string, Slot>
-    groupings: Groupings
+    slots: SlotDict
+    // groupings?: Groupings
     // operations: object
     // triggers: object
 }
 
+
 // Sheets should be responsible for creating thier values in the GVM. They should serve as a template and as a 
 // reference. There should be a config that is a singleton that they can share. GVMSheetConfig should be the template.
 class GVMSheet {
-    slots: Record<string, Slot>     // Paramitarized value
-    groupings: Groupings
+    slots: SlotDict     // Paramitarized value
+    // groupings: Groupings
     // operations: object
     // triggers: object
 
     constructor(sheetOptions: SheetOptions) {
         this.slots = sheetOptions.slots || {}
-        this.groupings = sheetOptions.groupings || {}
+        // this.groupings = sheetOptions.groupings || {}
         // this.operations = sheetOptions.operations || {}
         // this.triggers = sheetOptions.triggers || {}
     }
 
+    configured(): boolean {
+        Object.keys(this.slots).forEach(slotKey => {
+            const slot = this.slots[slotKey]
+            if (!GameValue.isGameValue(slot.value)) {
+                return false
+            }
+        })
+
+        return true
+    }
+
+    createTemplate(): GVMSheet {
+        const clearedSlots: SlotDict = {}
+
+        Object.keys(this.slots).forEach(slotKey => {
+            const { type, scope, required } = this.slots[slotKey]
+            clearedSlots[slotKey] = { type, scope, required }
+        })
+
+        return new GVMSheet({
+            slots: clearedSlots
+        })
+    }
 }
 
 // This sort of sheet is for creating values that override the GVM values. If a value is not present it will default to 

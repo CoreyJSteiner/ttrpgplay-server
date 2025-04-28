@@ -89,6 +89,18 @@ class GameValue {
         return this._tags
     }
 
+    get gameValue(): boolean {
+        return true
+    }
+
+    static isGameValue(value: any): boolean {
+        if (value.gameValue) {
+            return true
+        }
+
+        return false
+    }
+
     invoke(invokeOptions: InvokeOptions = InvokeDefault): number {
         const { useEffects, log, effects } = invokeOptions
         let invocationValue = this._baseValue
