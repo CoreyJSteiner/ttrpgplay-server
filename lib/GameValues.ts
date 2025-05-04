@@ -357,38 +357,5 @@ function performOperation(invocations: Invocations, operation: Operation): numbe
     return new DiceRoll(evalStr).total
 }
 
-// Example 5e
-
-// const TAG_CRIT = 'critable'
-
-// const baseAC = new GameValue(10, 'BASE_AC',)
-// const dex = new Scalar(14, 'ABS_DEX', 1, 20)
-// const dexMod = new Calc(0, 'AMOD_DEX', [dex], 'floor(#ABS_DEX - 10) / 2')
-
-// const AC = new Calc(0, 'AC', [dexMod, baseAC], '#AMOD_DEX + #BASE_AC + 0')
-// // console.log(AC.display)
-
-// const lance = new Die(0, 'LANCE', 12, 1, [], [TAG_CRIT])
-// const lvl = new Scalar(1, 'LVL', 1, 20)
-// const prof = new Calc(0, 'PROF', [lvl], '1 + ceil(#LVL / 4)')
-// const d20Roll = new Die(0, 'D20', 20, 1)
-
-// const atkRoll = new Calc(0, 'ATK', [dexMod, prof, d20Roll], '#AMOD_DEX + #PROF + #D20')
-// // console.log(atkRoll.display)
-
-// const crit: Effect = {
-//     name: 'crit',
-//     values: {},
-//     operation: `#${SELF_EFFECT}`,
-//     targetTags: new Set([TAG_CRIT]),
-//     negateBase: false
-// }
-
-// const damage = new Calc(0, 'DMG', [dexMod, lance], '#AMOD_DEX + #LANCE')
-// // console.log(damage.display)
-// // console.log(damage.display)
-// // dex.setValue(16)
-// console.log(damage.invoke({ log: true, useEffects: true, effects: [crit] }))
-
 export { GameValue, Scalar, Calc, Die, Effect }
 export type { Effects, Invocations, Tags, Operation }

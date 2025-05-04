@@ -7,33 +7,23 @@ import crypto from 'crypto'
 import { DiceRoll } from '@dice-roller/rpg-dice-roller'
 import { GameValueManager, testImportStr } from './lib/GameValueManager.ts'
 
-// const app = express()
-// app.use(express.static("public"));
-// const server = http.createServer(app);
-// const io = new Server(server)
 const io: Server = new Server({
     cors: {
         origin: "http://localhost:5173"
     }
 })
-// const port = process.env.PORT || 'PORT NOT SET'
 const port: number = parseInt(process.env.PORT || '3000')
 const __filename: string = fileURLToPath(import.meta.url);
 const __dirname: string = path.dirname(__filename);
 
 const manager: GameValueManager = new GameValueManager()
 manager.importJSON(testImportStr)
-console.dir(manager, { depth: null })
 
 type UUID = string
 
 const userSockets: Record<UUID, Socket> = {}
 const userNames: Record<UUID, string> = {}
 const userRooms: Record<UUID, string> = {}
-
-// app.get('/', (req, res) => {
-//     res.sendFile(__dirname + 'public/index.html')
-// })
 
 io.on('connection', (socket) => {
     console.log('a user connected')
@@ -68,7 +58,6 @@ function handleMessage(msg: string, userID: string): void {
 
     let messageLine: string = `${userNames[userID]}: ${parseMessage(msg, userID)}`
     io.to(userRooms[userID]).emit('chat-serverOrigin', messageLine)
-    console.log(messageLine);
 }
 
 function parseMessage(msg: string, userID: string): DiceRoll | string {
@@ -105,6 +94,9 @@ function notationString(input: string, gvm: GameValueManager, userID: string, di
     return result.slice(3)
 }
 
-io.listen(port, () => {
+try {
+    io.listen(port)
     console.log(`Server listening on PORT:${port}`)
-})
+} catch (error) {
+    console.log(error)
+}

@@ -112,13 +112,11 @@ class GameValueManager {
         const additionClass: string = addition.constructor.name
         const parentClass: string = Object.getPrototypeOf(addition.constructor).name
         const additionMethod: string = parentClass === 'GameValue' ? 'GameValue' : additionClass
-        console.log('additionMethod: ' + additionMethod)
         switch (additionMethod) {
             case 'GameValue':
                 this.addGameValue(addition as GameValue, owner)
                 break
             case 'Effect':
-                console.log('effect!')
                 this.addEffect(addition as Effect)
                 break
             default:
@@ -329,12 +327,3 @@ class GameValueManager {
 const testImportStr: string = JSON.stringify(gvmTestImport)
 
 export { GameValueManager, testImportStr }
-
-//Test
-
-// const gvm: GameValueManager = new GameValueManager()
-// gvm.importJSON(testImportStr)
-// console.dir(gvm, { depth: null })
-// const acId: UUID = gvm.getIdByName('AC', 'P1')
-// console.log(gvm.invokeById(acId))
-// console.log(gvm.invokeById(acId))
