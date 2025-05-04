@@ -7,13 +7,19 @@ import crypto from 'crypto'
 import { DiceRoll } from '@dice-roller/rpg-dice-roller'
 import { GameValueManager, testImportStr } from './lib/GameValueManager.ts'
 
-const app = express()
-app.use(express.static("public"));
-const server = http.createServer(app);
-const io = new Server(server)
-const port = process.env.PORT || 'PORT NOT SET'
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// const app = express()
+// app.use(express.static("public"));
+// const server = http.createServer(app);
+// const io = new Server(server)
+const io: Server = new Server({
+    cors: {
+        origin: "http://localhost:5173"
+    }
+})
+// const port = process.env.PORT || 'PORT NOT SET'
+const port: number = parseInt(process.env.PORT || '3000')
+const __filename: string = fileURLToPath(import.meta.url);
+const __dirname: string = path.dirname(__filename);
 
 const manager: GameValueManager = new GameValueManager()
 manager.importJSON(testImportStr)
@@ -25,9 +31,9 @@ const userSockets: Record<UUID, Socket> = {}
 const userNames: Record<UUID, string> = {}
 const userRooms: Record<UUID, string> = {}
 
-app.get('/', (req, res) => {
-    res.sendFile(__dirname + 'public/index.html')
-})
+// app.get('/', (req, res) => {
+//     res.sendFile(__dirname + 'public/index.html')
+// })
 
 io.on('connection', (socket) => {
     console.log('a user connected')
@@ -44,7 +50,7 @@ io.on('connection', (socket) => {
         socket.join(roomname)
     })
 
-    socket.on('chat message', (msg) => {
+    socket.on('chat-clientOrigin', (msg) => {
         handleMessage(msg, userID)
     })
 })
@@ -61,7 +67,7 @@ function handleMessage(msg: string, userID: string): void {
     }
 
     let messageLine: string = `${userNames[userID]}: ${parseMessage(msg, userID)}`
-    io.to(userRooms[userID]).emit('chat message', messageLine)
+    io.to(userRooms[userID]).emit('chat-serverOrigin', messageLine)
     console.log(messageLine);
 }
 
@@ -99,6 +105,6 @@ function notationString(input: string, gvm: GameValueManager, userID: string, di
     return result.slice(3)
 }
 
-server.listen(port, () => {
+io.listen(port, () => {
     console.log(`Server listening on PORT:${port}`)
 })
