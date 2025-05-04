@@ -88,7 +88,7 @@ class GVMSheet {
         }
     }
 
-    invokeSlotGameValue(slotName: string): number | undefined {
+    invokeSlot(slotName: string): number | undefined {
         const gameValue = this.getSlotGameValue(slotName)
         if (gameValue) {
             return gameValue.invoke()
