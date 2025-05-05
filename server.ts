@@ -1,5 +1,3 @@
-import express from 'express'
-import http from 'http'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { Server, Socket } from 'socket.io'
@@ -31,10 +29,12 @@ io.on('connection', (socket) => {
     userSockets[userID] = socket
 
     socket.on('username set', (username) => {
+        console.log('user: ' + username)
         userNames[userID] = username
     })
 
     socket.on('room set', (room) => {
+        console.log('room: ' + room)
         const roomname = room || "main"
         userRooms[userID] = roomname
         socket.join(roomname)
