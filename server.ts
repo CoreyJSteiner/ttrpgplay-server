@@ -22,6 +22,36 @@ type UUID = string
 const userSockets: Record<UUID, Socket> = {}
 const userNames: Record<UUID, string> = {}
 const userRooms: Record<UUID, string> = {}
+const userIds: Record<string, UUID> = {}
+const serverRooms: Record<string, ServerRoom> = {}
+
+class ServerRoom {
+    name: string
+    users: Set<string>
+    messages: Array<string>
+
+    constructor(name: string) {
+        this.name = name
+        this.users = new Set()
+        this.messages = []
+    }
+
+    addMessage(msg: string) {
+        this.messages.push(msg)
+    }
+
+    sendHistory(recipient: UUID | 'all') {
+        if (recipient === 'all') {
+            // userSockets.to(userRooms[recipient]).emit('chat-refresh', this.messages)
+        }
+
+        userSockets[recipient].emit('chat-refresh', this.messages)
+    }
+
+    addUser(user: string) {
+        this.users.add(user)
+    }
+}
 
 io.on('connection', (socket) => {
     console.log('a user connected')
@@ -31,13 +61,23 @@ io.on('connection', (socket) => {
     socket.on('username set', (username) => {
         console.log('user: ' + username)
         userNames[userID] = username
+        userIds[username] = userID
     })
 
     socket.on('room set', (room) => {
         console.log('room: ' + room)
         const roomname = room || "main"
+        if (!serverRooms[roomname]) {
+            serverRooms[roomname] = new ServerRoom(roomname)
+        }
         userRooms[userID] = roomname
+        serverRooms[roomname].addUser[userNames[userID]]
         socket.join(roomname)
+    })
+
+    socket.on('chat-reqRefresh', (user) => {
+        let room = serverRooms[userRooms[userID]]
+        room.sendHistory(userID)
     })
 
     socket.on('chat-clientOrigin', (msg) => {
@@ -57,7 +97,10 @@ function handleMessage(msg: string, userID: string): void {
     }
 
     let messageLine: string = `${userNames[userID]}: ${parseMessage(msg, userID)}`
-    io.to(userRooms[userID]).emit('chat-serverOrigin', messageLine)
+    let roomname = userRooms[userID]
+    let serverRoom = serverRooms[roomname]
+    serverRoom.addMessage(messageLine)
+    io.in(roomname).emit('chat-serverOrigin', messageLine)
 }
 
 function parseMessage(msg: string, userID: string): DiceRoll | string {
