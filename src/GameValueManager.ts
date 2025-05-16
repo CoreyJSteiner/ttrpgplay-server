@@ -17,6 +17,12 @@ type NameOwnersEntry = Record<string, UUID>
 type NameLookup = Record<string, NameOwnersEntry>
 type EffectDictionary = Record<string, Effect>
 
+
+// The implementation of this import works for now given that I'm just importing the test data which I know conforms 
+// correctly, but as it is its basically backwards. The updated implementation should have typeguards and type checking 
+// of the import data before it attempts to import, and only then seal the data with the category to import. User
+// imports are way donw the line though.
+
 type GVImportStatic = {
     'type': 'static',
     'baseVal': number,
