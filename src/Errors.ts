@@ -1,0 +1,1 @@
+export const errorUserExists: Error = new Error(`A user named that already exists`)

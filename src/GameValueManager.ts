@@ -2,7 +2,6 @@ import { GameValue, Scalar, Calc, Die, Effect } from "./GameValues.ts"
 import type { Effects, Invocations, Operation } from "./GameValues.ts"
 import crypto from "crypto"
 import gvmTestImport from '../assets/imports/gvmTestImport.json' with { type: "json" }
-import { appendFile } from "fs"
 type UUID = crypto.UUID
 
 const DEF_OWNER: string = 'public'
@@ -19,6 +18,7 @@ type NameLookup = Record<string, NameOwnersEntry>
 type EffectDictionary = Record<string, Effect>
 
 type GVImportStatic = {
+    'type': 'static',
     'baseVal': number,
     'name': string,
     'owner'?: string,
@@ -26,39 +26,46 @@ type GVImportStatic = {
     'tags'?: Array<string>
 }
 type GVImportScalar = {
-    'baseVal': number,
-    'name': string,
+    'type': 'scalar',
     'min': number,
     'max': number,
+    'baseVal': number,
+    'name': string,
     'owner'?: string,
     'effects'?: Effects,
     'tags'?: Array<string>
 }
 type GVImportCalc = {
-    'baseVal': number,
-    'name': string,
+    'type': 'calc',
     'operation': string,
     'values': Array<string>,
+    'baseVal': number,
+    'name': string,
     'owner'?: string,
     'effects'?: Effects,
     'tags'?: Array<string>
 }
 type GVImportDie = {
-    'baseVal': number,
-    'name': string,
+    'type': 'die',
     'sides': number,
     'quantity': number,
+    'baseVal': number,
+    'name': string,
     'owner'?: string,
     'effects'?: Effects,
     'tags'?: Array<string>
 }
+
 type EffectImport = {
-    name: string,
-    values: Invocations,
-    operation: Operation,
-    targetTags: Array<string>,
-    negateBase: boolean
+    'type': 'effect',
+    'name': string,
+    'values': Invocations,
+    'operation': Operation,
+    'targetTags': Array<string>,
+    'negateBase': boolean
 }
+
+type GVImport = GVImportStatic | GVImportScalar | GVImportCalc | GVImportDie | EffectImport
 
 class GameValueManager {
     private _idDictionary: IDDictionary
@@ -174,7 +181,7 @@ class GameValueManager {
     }
 
     outputSheet(owner?: string): object {
-        const sheet: object = {}
+        const sheet: Record<string, string> = {}
         const owners: Array<string> = [DEF_OWNER]
         const ids: Array<UUID> = []
         if (owner) {
@@ -226,97 +233,92 @@ class GameValueManager {
     }
 
     importJSON(dataStr: string): boolean {
-        const data: JSON = JSON.parse(dataStr)
+        const data: Record<string, Array<GVImport>> = JSON.parse(dataStr)
 
-        if (data['static']) this.createGVStatics(data['static'])
-        if (data['scalar']) this.createGVScalars(data['scalar'])
-        if (data['die']) this.createGVDice(data['die'])
-        if (data['calc']) this.createGVCalcs(data['calc'])
-        if (data['effect']) this.createEffects(data['effect'])
+        Object.keys(data).forEach((categoryKey: string) => {
+            const arrGameValues: Array<GVImport> = data[categoryKey].map(dataEntry => {
+                return { ...dataEntry, 'type': categoryKey } as GVImport
+            })
+            this.createGameValues(arrGameValues)
+        })
         return true
     }
 
-    createGVStatics(dataArr: Array<GVImportStatic>): boolean {
+    createGameValues(dataArr: Array<GVImport>): boolean {
         for (let i = 0; i < dataArr.length; i++) {
-            const d = dataArr[i]
+            const dataEntry = dataArr[i]
 
             try {
-                const { baseVal, name, owner, effects, tags } = d
-                const gv: GameValue = new GameValue(baseVal, name, effects, tags)
-                this.add(gv, owner)
+                switch (dataEntry.type) {
+                    case 'static':
+                        this.createGVStatic(dataEntry)
+                        break;
+                    case 'scalar':
+                        this.createGVScalar(dataEntry)
+                        break;
+                    case 'calc':
+                        this.createGVCalc(dataEntry)
+                        break;
+                    case 'die':
+                        this.createGVDie(dataEntry)
+                        break;
+                    case 'effect':
+                        this.createEffect(dataEntry)
+                        break;
+
+                    default:
+                        throw console.warn(`GV import has no type ${JSON.stringify(dataEntry)}`)
+                        break;
+                }
             } catch (error) {
-                throw console.warn(`Could not import static value ${JSON.stringify(d)}:\n\n${error}`)
+                throw console.warn(`Could not import static value ${JSON.stringify(dataEntry)}:\n\n${error}`)
             }
         }
 
         return true
     }
 
-
-    createGVScalars(dataArr: Array<GVImportScalar>): boolean {
-        for (let i = 0; i < dataArr.length; i++) {
-            const d = dataArr[i]
-
-            try {
-                const { baseVal, name, owner, min, max, effects, tags } = d
-                const gv: Scalar = new Scalar(baseVal, name, min, max)
-                this.add(gv, owner)
-            } catch (error) {
-                throw console.warn(`Could not import scalar value ${JSON.stringify(d)}:\n\n${error}`)
-            }
-        }
+    createGVStatic(dataEntry: GVImportStatic): boolean {
+        const { baseVal, name, owner, effects, tags } = dataEntry
+        const gv: GameValue = new GameValue(baseVal, name, effects, tags)
+        this.add(gv, owner)
 
         return true
     }
 
-    createGVCalcs(dataArr: Array<GVImportCalc>): boolean {
-        for (let i = 0; i < dataArr.length; i++) {
-            const d = dataArr[i]
 
-            try {
-                const { baseVal, name, owner, operation, values, effects, tags } = d
-                const lookupValues: Array<GameValue> = values.map(name => {
-                    const gvEntry = this.getGameValueEntryByName(name, owner)
-                    return gvEntry.gameValue
-                })
-                const gv: Calc = new Calc(baseVal, name, lookupValues, operation, effects, tags)
-                this.add(gv, owner)
-            } catch (error) {
-                throw console.warn(`Could not import calc value ${JSON.stringify(d)}:\n\n${error}`)
-            }
-        }
+    createGVScalar(dataEntry: GVImportScalar): boolean {
+        const { baseVal, name, owner, min, max, effects, tags } = dataEntry
+        const gv: Scalar = new Scalar(baseVal, name, min, max, effects, tags)
+        this.add(gv, owner)
 
         return true
     }
 
-    createGVDice(dataArr: Array<GVImportDie>): boolean {
-        for (let i = 0; i < dataArr.length; i++) {
-            const d = dataArr[i]
-
-            try {
-                const { baseVal, name, owner, sides, quantity, effects, tags } = d
-                const gv: Die = new Die(baseVal, name, sides, quantity, effects, tags)
-                this.add(gv, owner)
-            } catch (error) {
-                throw console.warn(`Could not import die value ${JSON.stringify(d)}:\n\n${error}`)
-            }
-        }
+    createGVCalc(dataEntry: GVImportCalc): boolean {
+        const { baseVal, name, owner, operation, values, effects, tags } = dataEntry
+        const lookupValues: Array<GameValue> = values.map(name => {
+            const gvEntry = this.getGameValueEntryByName(name, owner)
+            return gvEntry.gameValue
+        })
+        const gv: Calc = new Calc(baseVal, name, lookupValues, operation, effects, tags)
+        this.add(gv, owner)
 
         return true
     }
 
-    createEffects(dataArr: Array<EffectImport>): boolean {
-        for (let i = 0; i < dataArr.length; i++) {
-            const d = dataArr[i]
+    createGVDie(dataEntry: GVImportDie): boolean {
+        const { baseVal, name, owner, sides, quantity, effects, tags } = dataEntry
+        const gv: Die = new Die(baseVal, name, sides, quantity, effects, tags)
+        this.add(gv, owner)
 
-            try {
-                const { name, values, operation, targetTags, negateBase } = d
-                const effect: Effect = new Effect(name, values, operation, targetTags, negateBase)
-                this.add(effect)
-            } catch (error) {
-                throw console.warn(`Could not import effect value ${JSON.stringify(d)}:\n\n${error}`)
-            }
-        }
+        return true
+    }
+
+    createEffect(dataEntry: EffectImport): boolean {
+        const { name, values, operation, targetTags, negateBase } = dataEntry
+        const effect: Effect = new Effect(name, values, operation, targetTags, negateBase)
+        this.add(effect)
 
         return true
     }

@@ -252,7 +252,7 @@ class Calc extends GameValue {
     }
 
     invoke(invokeOptions: InvokeOptions = InvokeDefault): number {
-        const invocations: Invocations = this._values.reduce((acc, gv) => {
+        const invocations: Invocations = this._values.reduce((acc: Record<string, number>, gv: GameValue) => {
             acc[gv.name] = gv.invoke(invokeOptions)
             return acc
         }, {})
@@ -309,7 +309,7 @@ class Die extends GameValue {
     }
 
     invoke(invokeOptions: InvokeOptions = InvokeDefault): number {
-        const { useEffects, log } = invokeOptions
+        // const { useEffects, log } = invokeOptions
         const roll = new DiceRoll(`${this._quantity}d${this._sides}`).total
         this.setValue(roll)
 
