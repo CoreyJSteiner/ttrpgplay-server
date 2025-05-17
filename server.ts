@@ -43,12 +43,17 @@ io.on('connection', (socket) => {
             const parsedMsg: string = handleMessage(msg, user.userName)
             const destRoom = serverManager.getUserRoom(user.userName)
             destRoom?.postToRoom(parsedMsg)
-            destRoom?.createGameObject(
-                undefined,
-                Math.floor(Math.random() * 200) - 100 + 1,
-                Math.floor(Math.random() * 100) - 50 + 1
-            )
-            destRoom?.sendBoardState('all')
+            if (msg === 'resetBoard()') {
+                // destRoom?.createGameObject(
+                //     undefined,
+                //     Math.floor(Math.random() * 200) - 100 + 1,
+                //     Math.floor(Math.random() * 100) - 50 + 1
+                // )
+                destRoom?.createGameObject(undefined, 0, 36)
+                destRoom?.createGameObject(undefined, 24, 28)
+                destRoom?.sendBoardState('all')
+            }
+
         }
     })
 })
