@@ -114,11 +114,11 @@ class GameValueManager {
 
     add(addition: GameValue | Effect, owner?: string): boolean {
         if (this.isReserved(addition.name)) {
-            console.warn(`\'${addition.name}\' cannot be added as it is a reserved string`)
+            console.warn(`'${addition.name} cannot be added as it is a reserved string`)
             return false
         }
         if (owner && this.isReserved(owner)) {
-            console.warn(`\'${owner}\' cannot be an owner as it is a reserved string`)
+            console.warn(`'${owner}' cannot be an owner as it is a reserved string`)
             return false
         }
 
@@ -140,9 +140,9 @@ class GameValueManager {
         return true
     }
 
-    addEffect(effect: Effect) {
+    addEffect(effect: Effect): boolean {
         if (this._effectDictionary[effect.name]) {
-            console.warn(`The effect name \'${effect.name}\' is already taken`)
+            console.warn(`The effect name '${effect.name}' is already taken`)
 
             return false
         }

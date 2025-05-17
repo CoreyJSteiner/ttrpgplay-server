@@ -52,7 +52,7 @@ const InitInvokeDefault: InvokeOptions = {
 class GameValue {
     private _name: string
     private _baseValue: number
-    // private _effects: Effects
+    private _effects: Effects
     private _effectiveValue: number
     private _id: UUID
     private _tags: Set<string>
@@ -63,6 +63,7 @@ class GameValue {
         this._effectiveValue = this._baseValue
         this._id = randomUUID()
         this._tags = new Set(tags)
+        this._effects = effects || []
     }
 
     get name(): string {
@@ -85,6 +86,10 @@ class GameValue {
         return `${this._baseValue}${this._effectiveValue !== this._baseValue ? '*' : ''}`
     }
 
+    get effects(): Effects {
+        return this._effects
+    }
+
     get tags(): Tags {
         return this._tags
     }
@@ -93,8 +98,8 @@ class GameValue {
         return true
     }
 
-    static isGameValue(value: any): boolean {
-        if (value.gameValue) {
+    static isGameValue(inputObj: object): inputObj is GameValue {
+        if ('gameValue' in inputObj) {
             return true
         }
 
@@ -137,7 +142,7 @@ class GameValue {
     hasTag(tag: string | Tags | undefined): boolean {
         if (tag === undefined) return false
         let hasTag = false
-        let inputType = tag.constructor.name
+        const inputType = tag.constructor.name
 
         if (inputType === 'string') {
             this._tags.has(tag as string)
@@ -156,7 +161,7 @@ class GameValue {
         const { values, operation } = effect
         values[SELF_EFFECT] = this.invoke({ useEffects: false })
 
-        let valueEffect = performOperation(values, operation)
+        const valueEffect = performOperation(values, operation)
         return valueEffect
     }
 }
@@ -248,7 +253,7 @@ class Calc extends GameValue {
     }
 
     get display(): string {
-        return `${this.name}: ${this.baseValue} = \{${this._operation}\} [${this.valuesStr.join(', ')}]`
+        return `${this.name}: ${this.baseValue} = {${this._operation}} [${this.valuesStr.join(', ')}]`
     }
 
     invoke(invokeOptions: InvokeOptions = InvokeDefault): number {
@@ -318,7 +323,6 @@ class Die extends GameValue {
 }
 
 function performOperation(invocations: Invocations, operation: Operation): number {
-    const usedNames: Set<string> = new Set<string>()
     let evalStr: string = ''
 
     let replacePos: Array<number> = []

@@ -1,5 +1,5 @@
 import { UUID } from "crypto"
-import { GameValue, Scalar, Calc, Die } from "./GameValues.ts"
+import { GameValue } from "./GameValues.ts"
 import { GameValueManager } from "./GameValueManager.ts"
 
 // type Options = Array<string>    //Should this be a GameValue?
@@ -16,8 +16,8 @@ type Slot = {
     // invokeCondition?: string
 }
 
-type Grouping = Set<UUID>
-type Groupings = Record<string, Grouping>
+// type Grouping = Set<UUID>
+// type Groupings = Record<string, Grouping>
 
 type SlotDict = Record<string, Slot>
 type SheetOptions = {
@@ -39,7 +39,7 @@ class GVMSheet {
     // operations: object
     // triggers: object
 
-    constructor(gvm, sheetOptions: SheetOptions) {
+    constructor(gvm: GameValueManager, sheetOptions: SheetOptions) {
         this._slots = sheetOptions.slots || {}
         this._template = sheetOptions.template || false
         this._gvm = gvm
@@ -123,9 +123,9 @@ class GVMSheet {
         return false
     }
 
-    fillGameValue(slotName: string, gameValue: GameValue): boolean {
-        return true
-    }
+    // fillGameValue(slotName: string, gameValue: GameValue): boolean {
+    //     return true
+    // }
 }
 
 // This sort of sheet is for creating values that override the GVM values. If a value is not present it will default to 
@@ -141,13 +141,13 @@ class GVMSheet {
 // Right, then you should be able to take the snapshot and use it to revert the GVM. On the snap sheet there should be
 // a visual indication that the value is out of sync with the GVM. If its the whole sheet, use a border, if its a whole
 // section, than just the section. Just a value, then just the value.
-class SnapSheet {
-    overrideValues: object
+// class SnapSheet {
+//     overrideValues: object
 
-    constructor(overrideValues: object) {
-        this.overrideValues = overrideValues
-    }
+//     constructor(overrideValues: object) {
+//         this.overrideValues = overrideValues
+//     }
 
-}
+// }
 
 export { GVMSheet }

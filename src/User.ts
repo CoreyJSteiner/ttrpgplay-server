@@ -15,7 +15,7 @@ class User {
         this.roomName = roomName || 'lobby'
     }
 
-    isUser() {
+    isUser(): boolean {
         return true
     }
 }

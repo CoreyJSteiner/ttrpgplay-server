@@ -103,7 +103,7 @@ class ServerManager {
         return false
     }
 
-    changeUserRoom(userName: string, destRoomNameInput: string) {
+    changeUserRoom(userName: string, destRoomNameInput: string): void {
         const user: User = this.users[userName]
         const destRoomName: string = this.generativeJoin(destRoomNameInput).name
         const newRoom: ServerRoom = this.rooms[destRoomName]

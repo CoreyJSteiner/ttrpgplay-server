@@ -66,14 +66,14 @@ const parseMessage = (msg: string, userName: string): DiceRoll | string => {
 
             return msg.slice(3) + result
         } catch (error) {
-            return 'Invalid roll'
+            return `Invalid roll: ${error}`
         }
     }
 
     return msg
 }
 
-const notationString = (input: string, gvm: GameValueManager, userName: string, display?: boolean): string => {
+const notationString = (input: string, gvm: GameValueManager, userName: string): string => {
     // Regex to find all # followed by word characters (ie #DEX)
     const tokenRegex = /#(\w+)/g
 

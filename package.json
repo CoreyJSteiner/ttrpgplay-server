@@ -11,8 +11,10 @@
   "license": "ISC",
   "devDependencies": {
     "@types/node": "^22.14.0",
+    "eslint": "^9.27.0",
     "tsx": "^4.19.3",
-    "typescript": "^5.8.2"
+    "typescript": "^5.8.2",
+    "typescript-eslint": "^8.32.1"
   },
   "dependencies": {
     "@dice-roller/rpg-dice-roller": "^5.5.1",
