@@ -50,7 +50,22 @@ io.on('connection', (socket) => {
                 //     Math.floor(Math.random() * 100) - 50 + 1
                 // )
                 destRoom?.createGameObject(undefined, 0, 36)
-                destRoom?.createGameObject(undefined, 24, 28)
+                destRoom?.createGameObject(undefined, 12, 30)
+                destRoom?.createGameObject(undefined, 24, 24)
+                destRoom?.createGameObject(undefined, 36, 18)
+                destRoom?.createGameObject(undefined, 48, 12)
+                destRoom?.createGameObject(undefined, 60, 6)
+                destRoom?.createGameObject(undefined, 72, 0)
+                destRoom?.createGameObject(undefined, 84, -6)
+
+                destRoom?.createGameObject(undefined, -12, 30)
+                destRoom?.createGameObject(undefined, 0, 24)
+                destRoom?.createGameObject(undefined, 12, 18)
+                destRoom?.createGameObject(undefined, 24, 12)
+                destRoom?.createGameObject(undefined, 36, 6)
+                destRoom?.createGameObject(undefined, 48, 0)
+                destRoom?.createGameObject(undefined, 60, -6)
+                destRoom?.createGameObject(undefined, 72, -12)
                 destRoom?.sendBoardState('all')
             }
 
