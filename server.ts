@@ -41,7 +41,14 @@ io.on('connection', (socket) => {
 
         if (user) {
             const parsedMsg: string = handleMessage(msg, user.userName)
-            serverManager.getUserRoom(user.userName)?.postToRoom(parsedMsg)
+            const destRoom = serverManager.getUserRoom(user.userName)
+            destRoom?.postToRoom(parsedMsg)
+            destRoom?.createGameObject(
+                undefined,
+                Math.floor(Math.random() * 200) - 100 + 1,
+                Math.floor(Math.random() * 100) - 50 + 1
+            )
+            destRoom?.sendBoardState('all')
         }
     })
 })

@@ -57,6 +57,18 @@ class ServerRoom {
         }
     }
 
+    sendBoardState(recipient: string | 'all'): void {
+        if (recipient === 'all') {
+            this.socketIoServer.in(this.name).emit('board-refresh', this.gameObjects)
+            console.log('board state refresh all')
+        }
+
+        if (this.userList[recipient]) {
+            const user = this.userList[recipient]
+            user.socket?.emit('board-refresh', this.gameObjects)
+        }
+    }
+
     join(user: User): void {
         this.userList[user.userName] = user
         user.roomName = this.name
