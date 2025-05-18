@@ -66,6 +66,24 @@ io.on('connection', (socket) => {
                 destRoom?.createGameObject(undefined, 48, 0)
                 destRoom?.createGameObject(undefined, 60, -6)
                 destRoom?.createGameObject(undefined, 72, -12)
+
+                destRoom?.createGameObject(undefined, -84, -6)
+                destRoom?.createGameObject(undefined, -72, -12)
+                destRoom?.createGameObject(undefined, -60, -18)
+                destRoom?.createGameObject(undefined, -48, -24)
+                destRoom?.createGameObject(undefined, -36, -30)
+                destRoom?.createGameObject(undefined, -24, -36)
+                destRoom?.createGameObject(undefined, -12, -42)
+                destRoom?.createGameObject(undefined, 0, -48)
+
+                destRoom?.createGameObject(undefined, -72, 0)
+                destRoom?.createGameObject(undefined, -60, -6)
+                destRoom?.createGameObject(undefined, -48, -12)
+                destRoom?.createGameObject(undefined, -36, -18)
+                destRoom?.createGameObject(undefined, -24, -24)
+                destRoom?.createGameObject(undefined, -12, -30)
+                destRoom?.createGameObject(undefined, 0, -36)
+                destRoom?.createGameObject(undefined, 12, -42)
                 destRoom?.sendBoardState('all')
             }
 
