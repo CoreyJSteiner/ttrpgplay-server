@@ -44,46 +44,63 @@ io.on('connection', (socket) => {
             const destRoom = serverManager.getUserRoom(user.userName)
             destRoom?.postToRoom(parsedMsg)
             if (msg === 'resetBoard()') {
-                // destRoom?.createGameObject(
-                //     undefined,
-                //     Math.floor(Math.random() * 200) - 100 + 1,
-                //     Math.floor(Math.random() * 100) - 50 + 1
-                // )
-                destRoom?.createGameObject(undefined, 0, 36)
-                destRoom?.createGameObject(undefined, 12, 30)
-                destRoom?.createGameObject(undefined, 24, 24)
-                destRoom?.createGameObject(undefined, 36, 18)
-                destRoom?.createGameObject(undefined, 48, 12)
-                destRoom?.createGameObject(undefined, 60, 6)
-                destRoom?.createGameObject(undefined, 72, 0)
-                destRoom?.createGameObject(undefined, 84, -6)
 
-                destRoom?.createGameObject(undefined, -12, 30)
-                destRoom?.createGameObject(undefined, 0, 24)
-                destRoom?.createGameObject(undefined, 12, 18)
-                destRoom?.createGameObject(undefined, 24, 12)
-                destRoom?.createGameObject(undefined, 36, 6)
-                destRoom?.createGameObject(undefined, 48, 0)
-                destRoom?.createGameObject(undefined, 60, -6)
-                destRoom?.createGameObject(undefined, 72, -12)
 
-                destRoom?.createGameObject(undefined, -84, -6)
-                destRoom?.createGameObject(undefined, -72, -12)
-                destRoom?.createGameObject(undefined, -60, -18)
-                destRoom?.createGameObject(undefined, -48, -24)
-                destRoom?.createGameObject(undefined, -36, -30)
-                destRoom?.createGameObject(undefined, -24, -36)
-                destRoom?.createGameObject(undefined, -12, -42)
-                destRoom?.createGameObject(undefined, 0, -48)
+                const tileToCoord = (tileX: number, tileY: number): Array<number> => {
+                    // Tile grid configuration (match these to your client-side setup)
+                    const TILE_WIDTH = 12;
+                    const TILE_HEIGHT = 6;
+                    const ORIGIN_X = 85;  // X coordinate for tile (1,1)
+                    const ORIGIN_Y = 72;  // Y coordinate for tile (1,1)
 
-                destRoom?.createGameObject(undefined, -72, 0)
-                destRoom?.createGameObject(undefined, -60, -6)
-                destRoom?.createGameObject(undefined, -48, -12)
-                destRoom?.createGameObject(undefined, -36, -18)
-                destRoom?.createGameObject(undefined, -24, -24)
-                destRoom?.createGameObject(undefined, -12, -30)
-                destRoom?.createGameObject(undefined, 0, -36)
-                destRoom?.createGameObject(undefined, 12, -42)
+                    // Convert to isometric screen coordinates
+                    const screenX = ORIGIN_X + (tileX - 1) * TILE_WIDTH - (tileY - 1) * TILE_WIDTH;
+                    const screenY = ORIGIN_Y - (tileX - 1) * TILE_HEIGHT - (tileY - 1) * TILE_HEIGHT;
+
+                    return [screenX, screenY];
+                };
+
+                const createGameObjectByTile = (tileX: number, tileY: number): void => {
+                    const coords = tileToCoord(tileX, tileY)
+                    destRoom?.createGameObject(undefined, coords[0], coords[1])
+                }
+
+                createGameObjectByTile(1, 1)
+                createGameObjectByTile(2, 1)
+                createGameObjectByTile(3, 1)
+                createGameObjectByTile(4, 1)
+                createGameObjectByTile(5, 1)
+                createGameObjectByTile(6, 1)
+                createGameObjectByTile(7, 1)
+                createGameObjectByTile(8, 1)
+
+                createGameObjectByTile(1, 2)
+                createGameObjectByTile(2, 2)
+                createGameObjectByTile(3, 2)
+                createGameObjectByTile(4, 2)
+                createGameObjectByTile(5, 2)
+                createGameObjectByTile(6, 2)
+                createGameObjectByTile(7, 2)
+                createGameObjectByTile(8, 2)
+
+                createGameObjectByTile(1, 7)
+                createGameObjectByTile(2, 7)
+                createGameObjectByTile(3, 7)
+                createGameObjectByTile(4, 7)
+                createGameObjectByTile(5, 7)
+                createGameObjectByTile(6, 7)
+                createGameObjectByTile(7, 7)
+                createGameObjectByTile(8, 7)
+
+                createGameObjectByTile(1, 8)
+                createGameObjectByTile(2, 8)
+                createGameObjectByTile(3, 8)
+                createGameObjectByTile(4, 8)
+                createGameObjectByTile(5, 8)
+                createGameObjectByTile(6, 8)
+                createGameObjectByTile(7, 8)
+                createGameObjectByTile(8, 8)
+
                 destRoom?.sendBoardState('all')
             }
 
